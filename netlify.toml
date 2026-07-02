@@ -1,0 +1,13 @@
+# Configuración de deploy para Netlify.
+# El plugin oficial de Next.js adapta el App Router (SSR, rutas API y el
+# middleware `proxy.ts`) a las funciones de Netlify automáticamente.
+
+[build]
+  command = "npm run build"
+
+[build.environment]
+  # Igualamos la versión de Node con la que buildeás en local (Next 16 pide 20+).
+  NODE_VERSION = "22"
+
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
