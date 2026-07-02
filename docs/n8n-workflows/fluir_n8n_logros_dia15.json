@@ -1,0 +1,242 @@
+{
+  "name": "Fluir — Logros Día 15 (Email de refuerzo positivo)",
+  "description": "Cron que corre el día 15 de cada mes. Evalúa el estado del presupuesto de cada usuario activo. Si van bien, genera una tarjeta de logro y manda un email de refuerzo positivo.",
+
+  "nodes": [
+
+    {
+      "id": "1",
+      "name": "⏰ Cron — Día 15 de cada mes",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "position": [0, 0],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 10 15 * *"
+            }
+          ]
+        }
+      },
+      "notes": "Corre el día 15 a las 10:00 ARS. Si el 15 cae en fin de semana, considerar moverlo al lunes siguiente."
+    },
+
+    {
+      "id": "2",
+      "name": "🗄️ Supabase — Obtener usuarios activos del mes",
+      "type": "n8n-nodes-base.supabase",
+      "position": [220, 0],
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "budgets",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "month",
+              "keyValue": "={{ new Date().toISOString().slice(0,7) + '-01' }}"
+            }
+          ]
+        }
+      },
+      "notes": "Trae todos los budgets del mes en curso. Solo usuarios que cargaron su ingreso este mes están activos."
+    },
+
+    {
+      "id": "3",
+      "name": "🗄️ Supabase — Obtener gastos acumulados",
+      "type": "n8n-nodes-base.supabase",
+      "position": [440, 0],
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "expenses",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "date",
+              "keyValue": "={{ new Date().toISOString().slice(0,7) }}"
+            }
+          ]
+        }
+      },
+      "notes": "Trae todos los gastos del mes actual para calcular el progreso de cada usuario al día 15."
+    },
+
+    {
+      "id": "4",
+      "name": "🧮 Calcular estado al día 15",
+      "type": "n8n-nodes-base.code",
+      "position": [660, 0],
+      "parameters": {
+        "language": "javaScript",
+        "jsCode": "const budgets  = $('Supabase — Obtener usuarios activos del mes').all();\nconst expenses = $('Supabase — Obtener gastos acumulados').all();\n\n// Agrupar gastos por usuario\nconst expensesByUser = {};\nfor (const exp of expenses) {\n  const uid = exp.json.user_id;\n  if (!expensesByUser[uid]) expensesByUser[uid] = 0;\n  expensesByUser[uid] += Number(exp.json.amount);\n}\n\n// Calcular estado de cada usuario\nconst results = [];\nfor (const budget of budgets) {\n  const b    = budget.json;\n  const uid  = b.user_id;\n  const spent = expensesByUser[uid] || 0;\n  const income = Number(b.income);\n  const days_elapsed = 15;\n  const days_in_month = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate();\n  const expected_spend = income * (days_elapsed / days_in_month);\n\n  // Ratio: gasto real vs gasto esperado a la mitad del mes\n  // < 0.5 = muy bien, 0.5-0.8 = bien, > 0.8 = cuidado\n  const ratio = income > 0 ? spent / expected_spend : 1;\n\n  const is_doing_well = ratio < 0.80;\n\n  // Tipo de logro\n  let achievement_type = null;\n  if (ratio < 0.50) achievement_type = 'mid_month_excellent';\n  else if (ratio < 0.80) achievement_type = 'mid_month_ok';\n\n  if (achievement_type) {\n    results.push({\n      user_id:          uid,\n      income,\n      spent,\n      ratio:            Math.round(ratio * 100) / 100,\n      is_doing_well,\n      achievement_type,\n      remaining:        Math.max(income - spent, 0),\n      pct_spent:        Math.round(ratio * 100)\n    });\n  }\n}\n\nreturn results.map(r => ({ json: r }));"
+      },
+      "notes": "A la mitad del mes, si el usuario gastó menos del 80% de lo esperado para ese punto del mes, calificia para un logro."
+    },
+
+    {
+      "id": "5",
+      "name": "🔍 Filtrar solo usuarios que califican",
+      "type": "n8n-nodes-base.filter",
+      "position": [880, 0],
+      "parameters": {
+        "conditions": {
+          "conditions": [
+            {
+              "leftValue": "={{ $json.is_doing_well }}",
+              "rightValue": true,
+              "operator": { "type": "boolean", "operation": "equals" }
+            }
+          ]
+        }
+      }
+    },
+
+    {
+      "id": "6",
+      "name": "🗄️ Supabase — Verificar si ya se envió este mes",
+      "type": "n8n-nodes-base.supabase",
+      "position": [1100, 0],
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "user_achievements",
+        "filters": {
+          "conditions": [
+            { "keyName": "user_id", "keyValue": "={{ $json.user_id }}" },
+            { "keyName": "month",   "keyValue": "={{ new Date().toISOString().slice(0,7) + '-01' }}" },
+            { "keyName": "email_sent", "keyValue": "true" }
+          ]
+        }
+      },
+      "notes": "Evita enviar el email dos veces al mismo usuario en el mismo mes si el workflow se corre manualmente."
+    },
+
+    {
+      "id": "7",
+      "name": "🔍 Solo los que no recibieron email aún",
+      "type": "n8n-nodes-base.if",
+      "position": [1320, 0],
+      "parameters": {
+        "conditions": {
+          "conditions": [
+            {
+              "leftValue": "={{ $json.length }}",
+              "rightValue": 0,
+              "operator": { "type": "number", "operation": "equals" }
+            }
+          ]
+        }
+      }
+    },
+
+    {
+      "id": "8",
+      "name": "🤖 Claude — Generar mensaje personalizado",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [1540, -80],
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.anthropic.com/v1/messages",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "x-api-key",        "value": "={{ $env.ANTHROPIC_API_KEY }}" },
+            { "name": "anthropic-version", "value": "2023-06-01" },
+            { "name": "Content-Type",      "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "body": "={\n  \"model\": \"claude-sonnet-4-6\",\n  \"max_tokens\": 400,\n  \"messages\": [{\n    \"role\": \"user\",\n    \"content\": \"Escribí un email corto (máximo 4 oraciones) para un usuario argentino que lleva 15 días del mes y solo gastó el {{ $('Calcular estado al día 15').item.json.pct_spent }}% de lo que se esperaría para este punto del mes. Le quedan ${{ $('Calcular estado al día 15').item.json.remaining.toLocaleString('es-AR') }} pesos disponibles. Tono: celebratorio pero sin exagerar, anti-moralista, cercano. No menciones porcentajes ni números en el email — transmití el logro con palabras. Terminá con una oración sobre qué puede hacer con ese margen extra (salir, comprar algo que quería, ahorrar). Solo el cuerpo del email, sin asunto ni firma.\"\n  }]\n}"
+      },
+      "notes": "Claude genera el cuerpo del email adaptado al perfil real del usuario — cuánto gastó, cuánto le queda. No es un template fijo."
+    },
+
+    {
+      "id": "9",
+      "name": "🗄️ Supabase — Registrar logro",
+      "type": "n8n-nodes-base.supabase",
+      "position": [1760, -80],
+      "parameters": {
+        "operation": "insert",
+        "tableId": "user_achievements",
+        "fieldsUi": {
+          "fieldValues": [
+            { "fieldId": "user_id",          "fieldValue": "={{ $('Calcular estado al día 15').item.json.user_id }}" },
+            { "fieldId": "achievement_type",  "fieldValue": "={{ $('Calcular estado al día 15').item.json.achievement_type }}" },
+            { "fieldId": "month",             "fieldValue": "={{ new Date().toISOString().slice(0,7) + '-01' }}" },
+            { "fieldId": "triggered_at",      "fieldValue": "={{ new Date().toISOString() }}" },
+            { "fieldId": "email_sent",        "fieldValue": "true" }
+          ]
+        }
+      }
+    },
+
+    {
+      "id": "10",
+      "name": "📤 Enviar email via Supabase Edge Function",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [1980, -80],
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.SUPABASE_URL }}/functions/v1/send-email",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Authorization", "value": "=Bearer {{ $env.SUPABASE_SERVICE_ROLE_KEY }}" },
+            { "name": "Content-Type",  "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            { "name": "user_id", "value": "={{ $('Calcular estado al día 15').item.json.user_id }}" },
+            { "name": "subject", "value": "Vas muy bien este mes 🙌" },
+            { "name": "body",    "value": "={{ $json.content[0].text }}" }
+          ]
+        }
+      }
+    },
+
+    {
+      "id": "11",
+      "name": "✅ Log — Emails enviados",
+      "type": "n8n-nodes-base.set",
+      "position": [2200, -80],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            { "name": "status",          "value": "ok",                              "type": "string" },
+            { "name": "emails_enviados", "value": "={{ $itemIndex + 1 }}",           "type": "number" },
+            { "name": "timestamp",       "value": "={{ new Date().toISOString() }}", "type": "string" }
+          ]
+        }
+      }
+    }
+  ],
+
+  "connections": {
+    "⏰ Cron — Día 15 de cada mes":                    { "main": [[ { "node": "🗄️ Supabase — Obtener usuarios activos del mes", "type": "main", "index": 0 } ]] },
+    "🗄️ Supabase — Obtener usuarios activos del mes": { "main": [[ { "node": "🗄️ Supabase — Obtener gastos acumulados",         "type": "main", "index": 0 } ]] },
+    "🗄️ Supabase — Obtener gastos acumulados":         { "main": [[ { "node": "🧮 Calcular estado al día 15",                     "type": "main", "index": 0 } ]] },
+    "🧮 Calcular estado al día 15":                    { "main": [[ { "node": "🔍 Filtrar solo usuarios que califican",           "type": "main", "index": 0 } ]] },
+    "🔍 Filtrar solo usuarios que califican":          { "main": [[ { "node": "🗄️ Supabase — Verificar si ya se envió este mes", "type": "main", "index": 0 } ]] },
+    "🗄️ Supabase — Verificar si ya se envió este mes": { "main": [[ { "node": "🔍 Solo los que no recibieron email aún",          "type": "main", "index": 0 } ]] },
+    "🔍 Solo los que no recibieron email aún": {
+      "main": [
+        [ { "node": "🤖 Claude — Generar mensaje personalizado", "type": "main", "index": 0 } ],
+        []
+      ]
+    },
+    "🤖 Claude — Generar mensaje personalizado": { "main": [[ { "node": "🗄️ Supabase — Registrar logro",                     "type": "main", "index": 0 } ]] },
+    "🗄️ Supabase — Registrar logro":             { "main": [[ { "node": "📤 Enviar email via Supabase Edge Function",           "type": "main", "index": 0 } ]] },
+    "📤 Enviar email via Supabase Edge Function":  { "main": [[ { "node": "✅ Log — Emails enviados",                             "type": "main", "index": 0 } ]] }
+  },
+
+  "important_notes": [
+    "El ratio se calcula sobre el gasto esperado a la mitad del mes, no sobre el total del ingreso",
+    "< 50% del esperado = logro excelente, 50-80% = logro ok, > 80% = no califica",
+    "El email se genera con Claude API — personalizado con los números reales del usuario",
+    "La verificación de 'email_sent' evita duplicados si el cron se ejecuta manualmente",
+    "En Fase 4: agregar generación de tarjeta visual para compartir en stories"
+  ]
+}

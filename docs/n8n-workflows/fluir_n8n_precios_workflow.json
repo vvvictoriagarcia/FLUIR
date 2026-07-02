@@ -1,0 +1,383 @@
+{
+  "name": "Fluir — Actualización de Precios (Gold)",
+  "description": "Cron job que actualiza asset_prices y dolar_rates en Supabase cada 1h en horario de mercado. Fuentes: IOL (acciones/CEDEARs/bonos), ArgentinaDatos (FCI), CoinGecko (cripto), DolarApi (tipos de cambio).",
+  "nodes": [
+
+    {
+      "id": "1",
+      "name": "⏰ Cron — Cada 1h (horario de mercado)",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "position": [0, 0],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 11-17 * * 1-5"
+            }
+          ]
+        }
+      },
+      "notes": "Corre de lunes a viernes de 11:00 a 17:00 ARS (horario de mercado BYMA). Ajustar si el mercado tiene feriados."
+    },
+
+    {
+      "id": "2",
+      "name": "🔑 IOL — Obtener Token",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [200, 0],
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.invertironline.com/token",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Content-Type", "value": "application/x-www-form-urlencoded" }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            { "name": "username", "value": "={{ $env.IOL_USERNAME }}" },
+            { "name": "password", "value": "={{ $env.IOL_PASSWORD }}" },
+            { "name": "grant_type", "value": "password" }
+          ]
+        }
+      },
+      "notes": "El bearer token de IOL dura 15 min. Como el workflow corre cada 1h, siempre hay que obtener uno nuevo. Guardar IOL_USERNAME e IOL_PASSWORD como variables de entorno en n8n."
+    },
+
+    {
+      "id": "3",
+      "name": "💾 Guardar Token en Variable",
+      "type": "n8n-nodes-base.set",
+      "position": [400, 0],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "name": "iol_token",
+              "value": "={{ $json.access_token }}",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "notes": "Guarda el access_token para usarlo en los requests siguientes a IOL."
+    },
+
+    {
+      "id": "4a",
+      "name": "📈 IOL — Cotización Acciones (MERVAL)",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [600, -200],
+      "parameters": {
+        "method": "GET",
+        "url": "https://api.invertironline.com/api/v2/Argentina/Titulos/MERVAL/Cotizacion",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Authorization", "value": "=Bearer {{ $('Guardar Token en Variable').item.json.iol_token }}" }
+          ]
+        }
+      },
+      "notes": "Devuelve cotizaciones del panel MERVAL (acciones líderes argentinas). Respuesta incluye simbolo, ultimo, variacion, moneda."
+    },
+
+    {
+      "id": "4b",
+      "name": "📊 IOL — Cotización CEDEARs",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [600, -50],
+      "parameters": {
+        "method": "GET",
+        "url": "https://api.invertironline.com/api/v2/Argentina/Titulos/CEDEARS/Cotizacion",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Authorization", "value": "=Bearer {{ $('Guardar Token en Variable').item.json.iol_token }}" }
+          ]
+        }
+      },
+      "notes": "Devuelve cotizaciones de todos los CEDEARs disponibles. Mismo formato que acciones."
+    },
+
+    {
+      "id": "4c",
+      "name": "📄 IOL — Cotización Bonos",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [600, 100],
+      "parameters": {
+        "method": "GET",
+        "url": "https://api.invertironline.com/api/v2/Argentina/Titulos/BONOS/Cotizacion",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Authorization", "value": "=Bearer {{ $('Guardar Token en Variable').item.json.iol_token }}" }
+          ]
+        }
+      },
+      "notes": "Devuelve bonos soberanos y corporativos (AL30, GD35, etc.)."
+    },
+
+    {
+      "id": "5",
+      "name": "🏦 ArgentinaDatos — FCI Renta Fija",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [600, 250],
+      "parameters": {
+        "method": "GET",
+        "url": "https://api.argentinadatos.com/v1/finanzas/fci/rentaFija/ultimo",
+        "notes": "No requiere autenticación. Devuelve: fondo, tipo, fecha, vcp (valor cuotaparte), ccp, patrimonio. Actualizado después de las 21hs con datos del día."
+      }
+    },
+
+    {
+      "id": "6",
+      "name": "₿ CoinGecko — Cripto (ARS)",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [600, 400],
+      "parameters": {
+        "method": "GET",
+        "url": "https://api.coingecko.com/api/v3/simple/price",
+        "sendQueryParameters": true,
+        "queryParameters": {
+          "parameters": [
+            { "name": "ids", "value": "bitcoin,ethereum,tether,usd-coin,binancecoin" },
+            { "name": "vs_currencies", "value": "ars,usd" },
+            { "name": "include_24hr_change", "value": "true" }
+          ]
+        }
+      },
+      "notes": "API pública de CoinGecko — sin API key, límite de 30 llamadas/min. Para el MVP alcanza. Si escala, agregar x-cg-demo-api-key. Agrega más IDs según los activos que soporte Fluir."
+    },
+
+    {
+      "id": "7",
+      "name": "💵 DolarApi — Tipos de Cambio",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [600, 550],
+      "parameters": {
+        "method": "GET",
+        "url": "https://dolarapi.com/v1/dolares",
+        "notes": "Devuelve array con todos los tipos: oficial, blue, bolsa (MEP), contadoconliqui (CCL), tarjeta, mayorista. Cada objeto tiene: casa, nombre, compra, venta, fechaActualizacion."
+      }
+    },
+
+    {
+      "id": "8",
+      "name": "🔄 Transformar Acciones + CEDEARs + Bonos",
+      "type": "n8n-nodes-base.code",
+      "position": [850, -100],
+      "parameters": {
+        "language": "javaScript",
+        "jsCode": "// Unifica los 3 resultados de IOL en el formato de asset_prices\nconst acciones = $('IOL — Cotización Acciones (MERVAL)').all();\nconst cedears  = $('IOL — Cotización CEDEARs').all();\nconst bonos    = $('IOL — Cotización Bonos').all();\n\nconst toRows = (items, type) =>\n  items.flatMap(item =>\n    (item.json.titulos || []).map(t => ({\n      ticker:     t.simbolo,\n      price_ars:  t.ultimo,\n      price_usd:  null,\n      asset_type: type,\n      source:     'iol',\n      updated_at: new Date().toISOString()\n    }))\n  );\n\nreturn [\n  ...toRows(acciones, 'accion'),\n  ...toRows(cedears,  'cedear'),\n  ...toRows(bonos,    'bono'),\n].map(row => ({ json: row }));"
+      },
+      "notes": "IOL devuelve un array de 'titulos' por panel. Este nodo los aplana en el formato de la tabla asset_prices."
+    },
+
+    {
+      "id": "9",
+      "name": "🔄 Transformar FCI",
+      "type": "n8n-nodes-base.code",
+      "position": [850, 250],
+      "parameters": {
+        "language": "javaScript",
+        "jsCode": "// FCI usa el nombre del fondo como ticker\nconst items = $input.all();\nreturn items.map(item => ({\n  json: {\n    ticker:     item.json.fondo.replace(/\\s+/g, '_').toUpperCase(),\n    price_ars:  item.json.vcp,\n    price_usd:  null,\n    asset_type: 'fci',\n    source:     'cafci',\n    updated_at: new Date().toISOString()\n  }\n}));"
+      }
+    },
+
+    {
+      "id": "10",
+      "name": "🔄 Transformar Cripto",
+      "type": "n8n-nodes-base.code",
+      "position": [850, 400],
+      "parameters": {
+        "language": "javaScript",
+        "jsCode": "const data = $input.first().json;\nconst MAP = {\n  'bitcoin':     'BTC',\n  'ethereum':    'ETH',\n  'tether':      'USDT',\n  'usd-coin':    'USDC',\n  'binancecoin': 'BNB'\n};\nreturn Object.entries(data).map(([id, prices]) => ({\n  json: {\n    ticker:     MAP[id] || id.toUpperCase(),\n    price_ars:  prices.ars,\n    price_usd:  prices.usd,\n    asset_type: 'cripto',\n    source:     'coingecko',\n    updated_at: new Date().toISOString()\n  }\n}));"
+      }
+    },
+
+    {
+      "id": "11",
+      "name": "🔄 Transformar Dólar",
+      "type": "n8n-nodes-base.code",
+      "position": [850, 550],
+      "parameters": {
+        "language": "javaScript",
+        "jsCode": "const items = $input.all();\nconst dolares = {};\nfor (const item of items) {\n  const d = item.json;\n  if (d.casa === 'bolsa')           dolares.mep      = d.venta;\n  if (d.casa === 'contadoconliqui') dolares.ccl      = d.venta;\n  if (d.casa === 'oficial')         dolares.oficial  = d.venta;\n  if (d.casa === 'blue')            dolares.blue     = d.venta;\n}\nreturn [{\n  json: {\n    date:       new Date().toISOString().split('T')[0],\n    mep:        dolares.mep     || null,\n    ccl:        dolares.ccl     || null,\n    oficial:    dolares.oficial || null,\n    blue:       dolares.blue    || null,\n    updated_at: new Date().toISOString()\n  }\n}];"
+      },
+      "notes": "DolarApi usa 'bolsa' para MEP y 'contadoconliqui' para CCL. Guardamos solo el precio de venta."
+    },
+
+    {
+      "id": "12",
+      "name": "🗄️ Supabase — Upsert asset_prices (IOL)",
+      "type": "n8n-nodes-base.supabase",
+      "position": [1100, -100],
+      "parameters": {
+        "operation": "upsert",
+        "tableId": "asset_prices",
+        "fieldsUi": {
+          "fieldValues": [
+            { "fieldId": "ticker",     "fieldValue": "={{ $json.ticker }}" },
+            { "fieldId": "price_ars",  "fieldValue": "={{ $json.price_ars }}" },
+            { "fieldId": "price_usd",  "fieldValue": "={{ $json.price_usd }}" },
+            { "fieldId": "asset_type", "fieldValue": "={{ $json.asset_type }}" },
+            { "fieldId": "source",     "fieldValue": "={{ $json.source }}" },
+            { "fieldId": "updated_at", "fieldValue": "={{ $json.updated_at }}" }
+          ]
+        }
+      },
+      "notes": "ON CONFLICT (ticker) → UPDATE. Así nunca hay duplicados y siempre se pisa el precio anterior."
+    },
+
+    {
+      "id": "13",
+      "name": "🗄️ Supabase — Upsert asset_prices (FCI)",
+      "type": "n8n-nodes-base.supabase",
+      "position": [1100, 250],
+      "parameters": {
+        "operation": "upsert",
+        "tableId": "asset_prices",
+        "fieldsUi": {
+          "fieldValues": [
+            { "fieldId": "ticker",     "fieldValue": "={{ $json.ticker }}" },
+            { "fieldId": "price_ars",  "fieldValue": "={{ $json.price_ars }}" },
+            { "fieldId": "asset_type", "fieldValue": "={{ $json.asset_type }}" },
+            { "fieldId": "source",     "fieldValue": "={{ $json.source }}" },
+            { "fieldId": "updated_at", "fieldValue": "={{ $json.updated_at }}" }
+          ]
+        }
+      }
+    },
+
+    {
+      "id": "14",
+      "name": "🗄️ Supabase — Upsert asset_prices (Cripto)",
+      "type": "n8n-nodes-base.supabase",
+      "position": [1100, 400],
+      "parameters": {
+        "operation": "upsert",
+        "tableId": "asset_prices",
+        "fieldsUi": {
+          "fieldValues": [
+            { "fieldId": "ticker",     "fieldValue": "={{ $json.ticker }}" },
+            { "fieldId": "price_ars",  "fieldValue": "={{ $json.price_ars }}" },
+            { "fieldId": "price_usd",  "fieldValue": "={{ $json.price_usd }}" },
+            { "fieldId": "asset_type", "fieldValue": "={{ $json.asset_type }}" },
+            { "fieldId": "source",     "fieldValue": "={{ $json.source }}" },
+            { "fieldId": "updated_at", "fieldValue": "={{ $json.updated_at }}" }
+          ]
+        }
+      }
+    },
+
+    {
+      "id": "15",
+      "name": "🗄️ Supabase — Upsert dolar_rates",
+      "type": "n8n-nodes-base.supabase",
+      "position": [1100, 550],
+      "parameters": {
+        "operation": "upsert",
+        "tableId": "dolar_rates",
+        "fieldsUi": {
+          "fieldValues": [
+            { "fieldId": "date",       "fieldValue": "={{ $json.date }}" },
+            { "fieldId": "mep",        "fieldValue": "={{ $json.mep }}" },
+            { "fieldId": "ccl",        "fieldValue": "={{ $json.ccl }}" },
+            { "fieldId": "oficial",    "fieldValue": "={{ $json.oficial }}" },
+            { "fieldId": "blue",       "fieldValue": "={{ $json.blue }}" },
+            { "fieldId": "updated_at", "fieldValue": "={{ $json.updated_at }}" }
+          ]
+        }
+      },
+      "notes": "ON CONFLICT (date) → UPDATE. Si corre varias veces en el mismo día, siempre actualiza con el último valor."
+    },
+
+    {
+      "id": "16",
+      "name": "✅ Log — Ejecución exitosa",
+      "type": "n8n-nodes-base.set",
+      "position": [1350, 250],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            { "name": "status",     "value": "ok",                              "type": "string" },
+            { "name": "timestamp",  "value": "={{ new Date().toISOString() }}", "type": "string" },
+            { "name": "message",    "value": "Precios actualizados correctamente", "type": "string" }
+          ]
+        }
+      },
+      "notes": "Nodo final para confirmar ejecución exitosa. Conectar a un webhook de Slack o email si querés alertas."
+    },
+
+    {
+      "id": "ERR",
+      "name": "🚨 Error Handler",
+      "type": "n8n-nodes-base.set",
+      "position": [1350, 450],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            { "name": "status",  "value": "error",                          "type": "string" },
+            { "name": "error",   "value": "={{ $json.error.message }}",     "type": "string" },
+            { "name": "node",    "value": "={{ $json.error.node.name }}",   "type": "string" }
+          ]
+        }
+      },
+      "notes": "Conectar la salida de error de todos los nodos HTTP acá. En producción, agregar notificación a Slack/email."
+    }
+  ],
+
+  "connections": {
+    "⏰ Cron — Cada 1h (horario de mercado)":        { "main": [[ { "node": "🔑 IOL — Obtener Token", "type": "main", "index": 0 } ]] },
+    "🔑 IOL — Obtener Token":                        { "main": [[ { "node": "💾 Guardar Token en Variable", "type": "main", "index": 0 } ]] },
+    "💾 Guardar Token en Variable": {
+      "main": [[
+        { "node": "📈 IOL — Cotización Acciones (MERVAL)", "type": "main", "index": 0 },
+        { "node": "📊 IOL — Cotización CEDEARs",           "type": "main", "index": 0 },
+        { "node": "📄 IOL — Cotización Bonos",             "type": "main", "index": 0 },
+        { "node": "🏦 ArgentinaDatos — FCI Renta Fija",    "type": "main", "index": 0 },
+        { "node": "₿ CoinGecko — Cripto (ARS)",            "type": "main", "index": 0 },
+        { "node": "💵 DolarApi — Tipos de Cambio",         "type": "main", "index": 0 }
+      ]]
+    },
+    "📈 IOL — Cotización Acciones (MERVAL)": { "main": [[ { "node": "🔄 Transformar Acciones + CEDEARs + Bonos", "type": "main", "index": 0 } ]] },
+    "📊 IOL — Cotización CEDEARs":           { "main": [[ { "node": "🔄 Transformar Acciones + CEDEARs + Bonos", "type": "main", "index": 1 } ]] },
+    "📄 IOL — Cotización Bonos":             { "main": [[ { "node": "🔄 Transformar Acciones + CEDEARs + Bonos", "type": "main", "index": 2 } ]] },
+    "🏦 ArgentinaDatos — FCI Renta Fija":    { "main": [[ { "node": "🔄 Transformar FCI",    "type": "main", "index": 0 } ]] },
+    "₿ CoinGecko — Cripto (ARS)":            { "main": [[ { "node": "🔄 Transformar Cripto",  "type": "main", "index": 0 } ]] },
+    "💵 DolarApi — Tipos de Cambio":         { "main": [[ { "node": "🔄 Transformar Dólar",   "type": "main", "index": 0 } ]] },
+    "🔄 Transformar Acciones + CEDEARs + Bonos": { "main": [[ { "node": "🗄️ Supabase — Upsert asset_prices (IOL)",    "type": "main", "index": 0 } ]] },
+    "🔄 Transformar FCI":                        { "main": [[ { "node": "🗄️ Supabase — Upsert asset_prices (FCI)",    "type": "main", "index": 0 } ]] },
+    "🔄 Transformar Cripto":                     { "main": [[ { "node": "🗄️ Supabase — Upsert asset_prices (Cripto)", "type": "main", "index": 0 } ]] },
+    "🔄 Transformar Dólar":                      { "main": [[ { "node": "🗄️ Supabase — Upsert dolar_rates",          "type": "main", "index": 0 } ]] },
+    "🗄️ Supabase — Upsert asset_prices (IOL)":    { "main": [[ { "node": "✅ Log — Ejecución exitosa", "type": "main", "index": 0 } ]] },
+    "🗄️ Supabase — Upsert asset_prices (FCI)":    { "main": [[ { "node": "✅ Log — Ejecución exitosa", "type": "main", "index": 0 } ]] },
+    "🗄️ Supabase — Upsert asset_prices (Cripto)": { "main": [[ { "node": "✅ Log — Ejecución exitosa", "type": "main", "index": 0 } ]] },
+    "🗄️ Supabase — Upsert dolar_rates":           { "main": [[ { "node": "✅ Log — Ejecución exitosa", "type": "main", "index": 0 } ]] }
+  },
+
+  "settings": {
+    "errorWorkflow": "fluir-error-notifier",
+    "saveManualExecutions": true,
+    "executionOrder": "v1"
+  },
+
+  "env_variables_required": [
+    "IOL_USERNAME — usuario de tu cuenta IOL",
+    "IOL_PASSWORD — contraseña de tu cuenta IOL",
+    "SUPABASE_URL — URL del proyecto Supabase",
+    "SUPABASE_SERVICE_ROLE_KEY — service role key (no anon key)"
+  ],
+
+  "important_notes": [
+    "El bearer token de IOL dura 15 min — siempre hay que obtener uno nuevo al inicio de cada ejecución",
+    "Los nodos de Supabase usan UPSERT (ON CONFLICT ticker → UPDATE) — nunca genera duplicados",
+    "FCI se actualiza después de las 21hs — si el cron corre a las 17hs los datos son del día anterior",
+    "CoinGecko sin API key tiene rate limit de 30 calls/min — para el MVP alcanza ampliamente",
+    "DolarApi es open source y gratuito — si el dominio cambia, actualizar la URL",
+    "En feriados bursátiles IOL puede devolver arrays vacíos — el workflow los maneja sin romperse"
+  ]
+}

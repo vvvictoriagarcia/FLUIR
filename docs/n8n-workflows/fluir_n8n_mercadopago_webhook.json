@@ -1,0 +1,726 @@
+{
+  "name": "Fluir — Webhook Mercado Pago (Pagos y Planes)",
+  "description": "Recibe eventos de Mercado Pago (suscripciones, pagos, cancelaciones) y actualiza el plan del usuario en Supabase. Este workflow es el puente entre MP y la base de datos.",
+  "nodes": [
+    {
+      "id": "1",
+      "name": "📥 Webhook — Recibir evento MP",
+      "type": "n8n-nodes-base.webhook",
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "mercadopago-fluir",
+        "responseMode": "onReceived",
+        "responseCode": 200,
+        "responseData": "firstEntryJson",
+        "options": {}
+      },
+      "notes": "URL del webhook: https://[tu-instancia-n8n]/webhook/mercadopago-fluir. Esta URL va en el panel de MP → Tu negocio → Configuración → Notificaciones. MP espera un 200 en menos de 5 segundos — por eso respondemos inmediatamente y procesamos después."
+    },
+    {
+      "id": "1b",
+      "name": "🔐 Validar firma MP (HMAC)",
+      "type": "n8n-nodes-base.code",
+      "position": [
+        110,
+        0
+      ],
+      "parameters": {
+        "language": "javaScript",
+        "jsCode": "// Validar firma HMAC de Mercado Pago\n// Documentación: https://www.mercadopago.com.ar/developers/es/docs/your-integrations/notifications/webhooks\nconst crypto = require('crypto');\n\nconst secret     = $env.MP_WEBHOOK_SECRET;\nconst xSignature = $json.headers['x-signature'] || '';\nconst xRequestId = $json.headers['x-request-id'] || '';\nconst dataId     = $json.body?.data?.id || '';\n\n// Extraer ts y v1 del header x-signature\nconst ts = xSignature.match(/ts=(\\d+)/)?.[1];\nconst v1 = xSignature.match(/v1=([a-f0-9]+)/)?.[1];\n\nif (!ts || !v1) {\n  throw new Error('Header x-signature ausente o malformado — webhook rechazado');\n}\n\n// Construir el manifest según la documentación de MP\nconst manifest = `id:${dataId};request-id:${xRequestId};ts:${ts};`;\n\n// Calcular HMAC SHA256\nconst hash = crypto\n  .createHmac('sha256', secret)\n  .update(manifest)\n  .digest('hex');\n\nif (hash !== v1) {\n  throw new Error(`Firma inválida — posible ataque. hash=${hash} v1=${v1}`);\n}\n\n// Firma válida — pasar el body al siguiente nodo\nreturn [{ json: $json }];"
+      },
+      "notes": "SEGURIDAD CRÍTICA: valida que el webhook viene realmente de MP usando HMAC SHA256. Si la firma no coincide, el workflow termina con error y no procesa el evento. Requiere MP_WEBHOOK_SECRET en las variables de entorno de n8n — obtenerlo desde el panel de MP → Tus integraciones → Webhooks."
+    },
+    {
+      "id": "2",
+      "name": "🔍 Identificar tipo de evento",
+      "type": "n8n-nodes-base.switch",
+      "position": [
+        220,
+        0
+      ],
+      "parameters": {
+        "mode": "expression",
+        "conditions": {
+          "conditions": [
+            {
+              "id": "preapproval",
+              "leftValue": "={{ $json.body.type }}",
+              "rightValue": "subscription_preapproval",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            },
+            {
+              "id": "payment",
+              "leftValue": "={{ $json.body.type }}",
+              "rightValue": "payment",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            },
+            {
+              "id": "other",
+              "leftValue": "={{ $json.body.type }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty"
+              }
+            }
+          ]
+        }
+      },
+      "notes": "MP puede enviar varios tipos de eventos. Los que nos importan son: subscription_preapproval (alta/baja/pausa de suscripción) y payment (cobro ejecutado). El resto se ignora."
+    },
+    {
+      "id": "3",
+      "name": "🔑 Obtener token MP",
+      "type": "n8n-nodes-base.set",
+      "position": [
+        440,
+        -120
+      ],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "name": "mp_token",
+              "value": "={{ $env.MP_ACCESS_TOKEN }}",
+              "type": "string"
+            },
+            {
+              "name": "preapproval_id",
+              "value": "={{ $json.body.data.id }}",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "4",
+      "name": "📋 MP API — Obtener detalle suscripción",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        660,
+        -120
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "=https://api.mercadopago.com/preapproval/{{ $('Obtener token MP').item.json.preapproval_id }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $('Obtener token MP').item.json.mp_token }}"
+            }
+          ]
+        }
+      },
+      "notes": "Consultamos MP para obtener el detalle completo de la suscripción: status, external_reference (que es el user_id de Supabase), plan, etc. Nunca confiamos solo en los datos del webhook — siempre verificamos con la API."
+    },
+    {
+      "id": "5",
+      "name": "🧮 Determinar plan y status",
+      "type": "n8n-nodes-base.code",
+      "position": [
+        880,
+        -120
+      ],
+      "parameters": {
+        "language": "javaScript",
+        "jsCode": "const sub = $input.first().json;\n\n// external_reference es el user_id de Supabase\n// Se configura al crear la suscripción desde Next.js\nconst user_id = sub.external_reference;\n\n// Mapear el status de MP al status de Fluir\nconst STATUS_MAP = {\n  'authorized':  'active',\n  'pending':     'trialing',\n  'paused':      'paused',\n  'cancelled':   'cancelled',\n  'ended':       'cancelled',\n};\n\nconst mp_status    = sub.status;\nconst fluir_status = STATUS_MAP[mp_status] || 'cancelled';\n\n// Determinar el plan según el precio\n// Los precios se configuran al crear los planes en MP\nconst amount = sub.auto_recurring?.transaction_amount || 0;\nlet plan = 'free';\nif (amount >= 8000) plan = 'gold';\nelse if (amount >= 3500) plan = 'plus';\n\n// Si se canceló → volver a free\nif (fluir_status === 'cancelled') plan = 'free';\n\nreturn [{\n  json: {\n    user_id,\n    plan,\n    fluir_status,\n    mp_status,\n    mp_subscription_id:     sub.id,\n    mp_amount:              amount,\n    current_period_end:     sub.next_payment_date || null,\n    updated_at:             new Date().toISOString()\n  }\n}];"
+      },
+      "notes": "CLAVE: el external_reference es el user_id de Supabase — se pasa al crear la suscripción desde Next.js en el campo external_reference del POST /preapproval. Sin esto no podemos saber a qué usuario corresponde el pago."
+    },
+    {
+      "id": "6",
+      "name": "🗄️ Supabase — Actualizar plan en profiles",
+      "type": "n8n-nodes-base.supabase",
+      "position": [
+        1100,
+        -120
+      ],
+      "parameters": {
+        "operation": "update",
+        "tableId": "profiles",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "keyValue": "={{ $json.user_id }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "plan",
+              "fieldValue": "={{ $json.plan }}"
+            },
+            {
+              "fieldId": "plan_started_at",
+              "fieldValue": "={{ $json.updated_at }}"
+            }
+          ]
+        }
+      },
+      "notes": "Actualiza el plan del usuario. La RLS de Supabase se actualiza automáticamente — el usuario pasa a tener acceso al nuevo tier en el próximo request."
+    },
+    {
+      "id": "7",
+      "name": "🗄️ Supabase — Upsert en subscriptions",
+      "type": "n8n-nodes-base.supabase",
+      "position": [
+        1100,
+        20
+      ],
+      "parameters": {
+        "operation": "upsert",
+        "tableId": "subscriptions",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "user_id",
+              "fieldValue": "={{ $json.user_id }}"
+            },
+            {
+              "fieldId": "plan",
+              "fieldValue": "={{ $json.plan }}"
+            },
+            {
+              "fieldId": "status",
+              "fieldValue": "={{ $json.fluir_status }}"
+            },
+            {
+              "fieldId": "payment_provider",
+              "fieldValue": "mercadopago"
+            },
+            {
+              "fieldId": "external_id",
+              "fieldValue": "={{ $json.mp_subscription_id }}"
+            },
+            {
+              "fieldId": "current_period_end",
+              "fieldValue": "={{ $json.current_period_end }}"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "8",
+      "name": "🗄️ Supabase — Insert en plan_history",
+      "type": "n8n-nodes-base.supabase",
+      "position": [
+        1100,
+        160
+      ],
+      "parameters": {
+        "operation": "insert",
+        "tableId": "plan_history",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "user_id",
+              "fieldValue": "={{ $json.user_id }}"
+            },
+            {
+              "fieldId": "plan",
+              "fieldValue": "={{ $json.plan }}"
+            },
+            {
+              "fieldId": "started_at",
+              "fieldValue": "={{ $json.updated_at }}"
+            },
+            {
+              "fieldId": "reason",
+              "fieldValue": "={{ $json.fluir_status === 'active' ? 'upgrade' : $json.fluir_status === 'cancelled' ? 'churn' : $json.fluir_status }}"
+            }
+          ]
+        }
+      },
+      "notes": "Registra cada cambio de plan en el historial. Útil para analytics de churn, upgrades y downgrades."
+    },
+    {
+      "id": "9a",
+      "name": "📧 Email — Bienvenida a Plus/Gold",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        1320,
+        -200
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.anthropic.com/v1/messages",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-api-key",
+              "value": "={{ $env.ANTHROPIC_API_KEY }}"
+            },
+            {
+              "name": "anthropic-version",
+              "value": "2023-06-01"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "body": "={\n  \"model\": \"claude-sonnet-4-6\",\n  \"max_tokens\": 500,\n  \"messages\": [{\n    \"role\": \"user\",\n    \"content\": \"Escribí un email de bienvenida corto (máximo 5 oraciones) para un usuario argentino que acaba de activar el plan {{ $('Determinar plan y status').item.json.plan }} de Fluir, una app de finanzas personales. Tono: cercano, sin formalidad, sin moralismo financiero. No uses emojis. No menciones precios. Terminá con una oración motivadora. Solo devolvé el cuerpo del email, sin asunto.\"\n  }]\n}",
+        "options": {}
+      },
+      "notes": "Solo se ejecuta cuando el nuevo status es 'active' (plan activado exitosamente). Claude genera el cuerpo del email personalizado según el plan."
+    },
+    {
+      "id": "9b",
+      "name": "📧 Email — Confirmación cancelación",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        1320,
+        -60
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.anthropic.com/v1/messages",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-api-key",
+              "value": "={{ $env.ANTHROPIC_API_KEY }}"
+            },
+            {
+              "name": "anthropic-version",
+              "value": "2023-06-01"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "body": "={\n  \"model\": \"claude-sonnet-4-6\",\n  \"max_tokens\": 300,\n  \"messages\": [{\n    \"role\": \"user\",\n    \"content\": \"Escribí un email corto (máximo 4 oraciones) para un usuario argentino que canceló su suscripción a Fluir. Tono: sin drama, sin culpa, dejando la puerta abierta. No menciones precios. Solo devolvé el cuerpo del email, sin asunto.\"\n  }]\n}",
+        "options": {}
+      }
+    },
+    {
+      "id": "10",
+      "name": "📤 Enviar email via Supabase Edge Function",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        1540,
+        -130
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.SUPABASE_URL }}/functions/v1/send-email",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $env.SUPABASE_SERVICE_ROLE_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "user_id",
+              "value": "={{ $('Determinar plan y status').item.json.user_id }}"
+            },
+            {
+              "name": "subject",
+              "value": "={{ $('Determinar plan y status').item.json.fluir_status === 'active' ? 'Tu plan ' + $('Determinar plan y status').item.json.plan + ' está activo' : 'Tu suscripción fue cancelada' }}"
+            },
+            {
+              "name": "body",
+              "value": "={{ $json.content[0].text }}"
+            }
+          ]
+        }
+      },
+      "notes": "Supabase Edge Function que toma el user_id, busca el email en auth.users y envía con Resend.com. Crear la función en Supabase → Edge Functions → send-email."
+    },
+    {
+      "id": "11",
+      "name": "🔔 Webhook — Evento payment (cobro)",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        440,
+        120
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "=https://api.mercadopago.com/v1/payments/{{ $json.body.data.id }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $env.MP_ACCESS_TOKEN }}"
+            }
+          ]
+        }
+      },
+      "notes": "Para eventos de tipo 'payment', verificamos el detalle del cobro. Útil para detectar pagos rechazados y tomar acción (pausar el plan)."
+    },
+    {
+      "id": "12",
+      "name": "💳 Manejar estado del cobro",
+      "type": "n8n-nodes-base.code",
+      "position": [
+        660,
+        120
+      ],
+      "parameters": {
+        "language": "javaScript",
+        "jsCode": "const payment = $input.first().json;\n\n// Si el cobro fue rechazado, pausamos el plan\nconst PAYMENT_STATUS = {\n  'approved':       'ok',\n  'pending':        'pending',\n  'rejected':       'rejected',\n  'cancelled':      'cancelled',\n  'refunded':       'refunded',\n  'charged_back':   'charged_back'\n};\n\nconst status = PAYMENT_STATUS[payment.status] || 'unknown';\n\nreturn [{\n  json: {\n    payment_id:     payment.id,\n    status,\n    amount:         payment.transaction_amount,\n    user_id:        payment.external_reference,\n    should_pause:   status === 'rejected',\n    updated_at:     new Date().toISOString()\n  }\n}];"
+      }
+    },
+    {
+      "id": "13",
+      "name": "⚠️ Si cobro rechazado → pausar plan",
+      "type": "n8n-nodes-base.if",
+      "position": [
+        880,
+        120
+      ],
+      "parameters": {
+        "conditions": {
+          "conditions": [
+            {
+              "leftValue": "={{ $json.should_pause }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "14",
+      "name": "🗄️ Supabase — Pausar plan (cobro rechazado)",
+      "type": "n8n-nodes-base.supabase",
+      "position": [
+        1100,
+        120
+      ],
+      "parameters": {
+        "operation": "update",
+        "tableId": "subscriptions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "user_id",
+              "keyValue": "={{ $json.user_id }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "status",
+              "fieldValue": "paused"
+            }
+          ]
+        }
+      },
+      "notes": "MP reintenta el cobro automáticamente. Mientras tanto, el plan queda como 'paused' — el usuario puede seguir usando el tier actual por gracia de 3 días (configurable)."
+    },
+    {
+      "id": "15",
+      "name": "🔕 Ignorar otros eventos",
+      "type": "n8n-nodes-base.noOp",
+      "position": [
+        440,
+        300
+      ],
+      "notes": "Eventos que no son subscription_preapproval ni payment se ignoran silenciosamente. MP envía otros tipos como 'topic_merchant_order_wh' que no aplican a Fluir."
+    },
+    {
+      "id": "16",
+      "name": "✅ Log — Evento procesado",
+      "type": "n8n-nodes-base.set",
+      "position": [
+        1760,
+        0
+      ],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "name": "status",
+              "value": "ok",
+              "type": "string"
+            },
+            {
+              "name": "timestamp",
+              "value": "={{ new Date().toISOString() }}",
+              "type": "string"
+            },
+            {
+              "name": "event_type",
+              "value": "={{ $('Webhook — Recibir evento MP').item.json.body.type }}",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "ERR",
+      "name": "🚨 Error Handler",
+      "type": "n8n-nodes-base.set",
+      "position": [
+        1760,
+        200
+      ],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "name": "status",
+              "value": "error",
+              "type": "string"
+            },
+            {
+              "name": "error",
+              "value": "={{ $json.error?.message }}",
+              "type": "string"
+            },
+            {
+              "name": "node",
+              "value": "={{ $json.error?.node?.name }}",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "notes": "En producción conectar a Slack o email para alertas de errores críticos en pagos."
+    }
+  ],
+  "connections": {
+    "📥 Webhook — Recibir evento MP": {
+      "main": [
+        [
+          {
+            "node": "🔐 Validar firma MP (HMAC)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "🔍 Identificar tipo de evento": {
+      "main": [
+        [
+          {
+            "node": "🔑 Obtener token MP",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "🔔 Webhook — Evento payment (cobro)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "🔕 Ignorar otros eventos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "🔑 Obtener token MP": {
+      "main": [
+        [
+          {
+            "node": "📋 MP API — Obtener detalle suscripción",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "📋 MP API — Obtener detalle suscripción": {
+      "main": [
+        [
+          {
+            "node": "🧮 Determinar plan y status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "🧮 Determinar plan y status": {
+      "main": [
+        [
+          {
+            "node": "🗄️ Supabase — Actualizar plan en profiles",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "🗄️ Supabase — Upsert en subscriptions",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "🗄️ Supabase — Insert en plan_history",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "🗄️ Supabase — Actualizar plan en profiles": {
+      "main": [
+        [
+          {
+            "node": "📧 Email — Bienvenida a Plus/Gold",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "📧 Email — Bienvenida a Plus/Gold": {
+      "main": [
+        [
+          {
+            "node": "📤 Enviar email via Supabase Edge Function",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "📧 Email — Confirmación cancelación": {
+      "main": [
+        [
+          {
+            "node": "📤 Enviar email via Supabase Edge Function",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "📤 Enviar email via Supabase Edge Function": {
+      "main": [
+        [
+          {
+            "node": "✅ Log — Evento procesado",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "🔔 Webhook — Evento payment (cobro)": {
+      "main": [
+        [
+          {
+            "node": "💳 Manejar estado del cobro",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "💳 Manejar estado del cobro": {
+      "main": [
+        [
+          {
+            "node": "⚠️ Si cobro rechazado → pausar plan",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "⚠️ Si cobro rechazado → pausar plan": {
+      "main": [
+        [
+          {
+            "node": "🗄️ Supabase — Pausar plan (cobro rechazado)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "✅ Log — Evento procesado",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "🗄️ Supabase — Pausar plan (cobro rechazado)": {
+      "main": [
+        [
+          {
+            "node": "✅ Log — Evento procesado",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "🔐 Validar firma MP (HMAC)": {
+      "main": [
+        [
+          {
+            "node": "🔍 Identificar tipo de evento",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "important_notes": [
+    "SEGURIDAD: el nodo 'Validar firma MP' verifica HMAC SHA256 en cada request — sin esto cualquiera podría falsificar eventos y cambiar planes de usuarios",
+    "El external_reference en MP DEBE ser el user_id de Supabase — se configura al crear la suscripción desde Next.js",
+    "MP espera un HTTP 200 en menos de 5 segundos — el webhook responde inmediatamente y procesa después",
+    "Nunca confiar solo en los datos del webhook — siempre verificar con la API de MP antes de actualizar el plan",
+    "Si el cobro es rechazado, MP reintenta automáticamente — el plan queda como 'paused' durante el reintento",
+    "La Edge Function de Supabase 'send-email' debe crearse manualmente usando Resend.com como proveedor"
+  ],
+  "env_variables_required": [
+    "MP_ACCESS_TOKEN — Access token de Mercado Pago (solo server-side)",
+    "ANTHROPIC_API_KEY — para generar emails personalizados",
+    "MP_WEBHOOK_SECRET — clave secreta del webhook en MP (panel → Tus integraciones → Webhooks)",
+    "SUPABASE_URL — URL del proyecto",
+    "SUPABASE_SERVICE_ROLE_KEY — service role key"
+  ]
+}

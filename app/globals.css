@@ -1,0 +1,135 @@
+@import "tailwindcss";
+
+/* Dark mode por clase (.dark) en vez de prefers-color-scheme,
+   para que el ThemeToggle de Fluir controle el tema. */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* ───────────────────────────────────────────────
+   Tokens de Fluir — modo claro (arena suave)
+   ─────────────────────────────────────────────── */
+:root {
+  --background: #f8f5ef; /* arena suave */
+  --foreground: #1a1a2e;
+  --card: #ffffff;
+  --card-foreground: #1a1a2e;
+  --muted: #ece7dd;
+  --muted-foreground: #6b6b7b;
+  --border: #e3ddd0;
+  --input: #e3ddd0;
+
+  --brand: #6c63ff; /* violeta — acento principal */
+  --brand-foreground: #ffffff;
+  --gold: #f0b429; /* exclusivo tier Gold */
+  --gold-foreground: #1a1a2e;
+  --positive: #3ebd8f; /* ganancia, superávit */
+  --negative: #e05c5c; /* pérdida, gasto excedido */
+
+  --radius: 1rem;
+}
+
+/* ───────────────────────────────────────────────
+   Tokens de Fluir — modo oscuro (gris cálido, OLED-safe)
+   ─────────────────────────────────────────────── */
+.dark {
+  --background: #111009; /* no negro absoluto */
+  --foreground: #ede9e0; /* nunca blanco puro */
+  --card: #1b1a12;
+  --card-foreground: #ede9e0;
+  --muted: #26241a;
+  --muted-foreground: #a8a294;
+  --border: #2e2b20;
+  --input: #2e2b20;
+
+  --brand: #8b83ff; /* un toque más brillante sobre fondo oscuro */
+  --brand-foreground: #ffffff;
+  --gold: #f0b429;
+  --gold-foreground: #1a1a2e;
+  --positive: #3ebd8f;
+  --negative: #e05c5c;
+}
+
+/* ───────────────────────────────────────────────
+   Mapeo de tokens a utilidades de Tailwind v4
+   (bg-brand, text-positive, border-border, font-display, etc.)
+   ─────────────────────────────────────────────── */
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+
+  --color-brand: var(--brand);
+  --color-brand-foreground: var(--brand-foreground);
+  --color-gold: var(--gold);
+  --color-gold-foreground: var(--gold-foreground);
+  --color-positive: var(--positive);
+  --color-negative: var(--negative);
+
+  --font-display: var(--font-fraunces);
+  --font-sans: var(--font-inter);
+
+  --radius-card: var(--radius);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-inter), system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── Profundidad: sombra suave en las cards (eleva la sensación) ── */
+.rounded-card {
+  box-shadow:
+    0 1px 2px rgba(17, 16, 9, 0.04),
+    0 4px 12px rgba(17, 16, 9, 0.04);
+}
+.dark .rounded-card {
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.3),
+    0 4px 14px rgba(0, 0, 0, 0.25);
+}
+
+/* ── Foco accesible y prolijo en elementos interactivos ── */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+[role="switch"]:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+  border-radius: 0.5rem;
+}
+
+/* ── Shimmer para los skeletons de carga ── */
+.skeleton {
+  position: relative;
+  overflow: hidden;
+  background: var(--muted);
+}
+.skeleton::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.08),
+    transparent
+  );
+  animation: fluir-shimmer 1.5s infinite;
+}
+@keyframes fluir-shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .skeleton::after {
+    animation: none;
+  }
+}

@@ -1,0 +1,10 @@
+# Normalizamos saltos de línea a LF en el repo (Netlify buildea en Linux).
+* text=auto eol=lf
+
+# Binarios: que git no los toque.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.ico binary

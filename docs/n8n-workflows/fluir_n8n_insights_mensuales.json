@@ -1,0 +1,199 @@
+{
+  "name": "Fluir — Insights Mensuales (Plus)",
+  "description": "Cron que corre el día 1 de cada mes. Para cada usuario Plus activo, analiza el mes anterior con Claude API y genera 2-3 insights personalizados que aparecen en la sección Historial.",
+
+  "nodes": [
+
+    {
+      "id": "1",
+      "name": "⏰ Cron — Día 1 de cada mes",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "position": [0, 0],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 9 1 * *"
+            }
+          ]
+        }
+      },
+      "notes": "Corre el día 1 a las 9:00 ARS — cuando el usuario abre la app para cargar su nuevo ingreso ya tiene los insights del mes anterior."
+    },
+
+    {
+      "id": "2",
+      "name": "🗄️ Supabase — Usuarios Plus activos",
+      "type": "n8n-nodes-base.supabase",
+      "position": [220, 0],
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "profiles",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "plan",
+              "keyValue": "plus",
+              "operator": "in",
+              "value2": "gold"
+            }
+          ]
+        }
+      },
+      "notes": "Los insights aplican a Plus Y Gold. Gold también tiene acceso a Historial."
+    },
+
+    {
+      "id": "3",
+      "name": "🗄️ Supabase — Budget del mes anterior",
+      "type": "n8n-nodes-base.supabase",
+      "position": [440, 0],
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "budgets",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "user_id",
+              "keyValue": "={{ $json.id }}"
+            },
+            {
+              "keyName": "month",
+              "keyValue": "={{ (() => { const d = new Date(); d.setMonth(d.getMonth() - 1); return d.toISOString().slice(0,7) + '-01'; })() }}"
+            }
+          ]
+        }
+      }
+    },
+
+    {
+      "id": "4",
+      "name": "🗄️ Supabase — Gastos del mes anterior",
+      "type": "n8n-nodes-base.supabase",
+      "position": [660, 0],
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "expenses",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "user_id",
+              "keyValue": "={{ $('Supabase — Usuarios Plus activos').item.json.id }}"
+            },
+            {
+              "keyName": "date",
+              "keyValue": "={{ (() => { const d = new Date(); d.setMonth(d.getMonth() - 1); return d.toISOString().slice(0,7); })() }}"
+            }
+          ]
+        }
+      }
+    },
+
+    {
+      "id": "5",
+      "name": "🧮 Preparar datos para Claude",
+      "type": "n8n-nodes-base.code",
+      "position": [880, 0],
+      "parameters": {
+        "language": "javaScript",
+        "jsCode": "const budget   = $('Supabase — Budget del mes anterior').first()?.json;\nconst expenses = $('Supabase — Gastos del mes anterior').all();\nconst user     = $('Supabase — Usuarios Plus activos').first().json;\n\nif (!budget) return [];  // Usuario no tuvo presupuesto el mes pasado\n\n// Agrupar gastos por categoría\nconst byCategory = {};\nfor (const exp of expenses) {\n  const cat = exp.json.category;\n  if (!byCategory[cat]) byCategory[cat] = 0;\n  byCategory[cat] += Number(exp.json.amount);\n}\n\n// Calcular totales\nconst total_spent  = Object.values(byCategory).reduce((a, b) => a + b, 0);\nconst income       = Number(budget.income);\nconst savings      = Math.max(income - total_spent, 0);\nconst savings_rate = income > 0 ? Math.round((savings / income) * 100) : 0;\n\n// Categoría con mayor gasto\nconst top_category = Object.entries(byCategory)\n  .sort((a, b) => b[1] - a[1])[0];\n\n// Mes anterior formateado\nconst prev = new Date();\nprev.setMonth(prev.getMonth() - 1);\nconst month_name = prev.toLocaleDateString('es-AR', { month: 'long', year: 'numeric' });\n\nreturn [{\n  json: {\n    user_id:      user.id,\n    month_name,\n    income,\n    total_spent,\n    savings,\n    savings_rate,\n    by_category:  byCategory,\n    top_category: top_category ? { name: top_category[0], amount: top_category[1] } : null,\n    budget_month: budget.month\n  }\n}];"
+      }
+    },
+
+    {
+      "id": "6",
+      "name": "🤖 Claude — Generar insights",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [1100, 0],
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.anthropic.com/v1/messages",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "x-api-key",        "value": "={{ $env.ANTHROPIC_API_KEY }}" },
+            { "name": "anthropic-version", "value": "2023-06-01" },
+            { "name": "Content-Type",      "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "body": "={\n  \"model\": \"claude-sonnet-4-6\",\n  \"max_tokens\": 600,\n  \"system\": \"Sos el asistente financiero de Fluir, una app de finanzas personales para jóvenes argentinos. Tu tono es cercano, directo, sin moralismo. Nunca culpabilizás al usuario por gastar. Siempre encontrás algo positivo. Respondés ÚNICAMENTE con un JSON válido sin markdown ni backticks.\",\n  \"messages\": [{\n    \"role\": \"user\",\n    \"content\": \"Generá exactamente 3 insights financieros para este usuario basados en su mes de {{ $json.month_name }}. Datos: ingreso ${{ $json.income }}, gastado ${{ $json.total_spent }}, ahorro ${{ $json.savings }} ({{ $json.savings_rate }}%), categoría con más gasto: {{ $json.top_category?.name }} (${{ $json.top_category?.amount }}), desglose por categoría: {{ JSON.stringify($json.by_category) }}. Respondé SOLO con este JSON sin ningún texto adicional: {\\\"insights\\\": [{\\\"type\\\": \\\"positive|warning|tip\\\", \\\"title\\\": \\\"max 6 palabras\\\", \\\"body\\\": \\\"max 2 oraciones, tono cercano argentino\\\"}]}\"\n  }]\n}"
+      },
+      "notes": "Claude devuelve JSON con 3 insights: type puede ser 'positive' (verde), 'warning' (amarillo) o 'tip' (violeta). El frontend los renderiza con color según el tipo."
+    },
+
+    {
+      "id": "7",
+      "name": "🔄 Parsear respuesta de Claude",
+      "type": "n8n-nodes-base.code",
+      "position": [1320, 0],
+      "parameters": {
+        "language": "javaScript",
+        "jsCode": "const response = $input.first().json;\nconst text = response.content[0].text;\n\ntry {\n  const parsed = JSON.parse(text);\n  const user_data = $('Preparar datos para Claude').first().json;\n\n  return parsed.insights.map((insight, i) => ({\n    json: {\n      user_id:    user_data.user_id,\n      month:      user_data.budget_month,\n      type:       insight.type,\n      title:      insight.title,\n      body:       insight.body,\n      sort_order: i + 1,\n      created_at: new Date().toISOString()\n    }\n  }));\n} catch (e) {\n  // Si Claude no devolvió JSON válido, logeamos el error\n  console.error('Error parsing Claude response:', text);\n  return [];\n}"
+      }
+    },
+
+    {
+      "id": "8",
+      "name": "🗄️ Supabase — Guardar insights",
+      "type": "n8n-nodes-base.supabase",
+      "position": [1540, 0],
+      "parameters": {
+        "operation": "insert",
+        "tableId": "monthly_insights",
+        "fieldsUi": {
+          "fieldValues": [
+            { "fieldId": "user_id",    "fieldValue": "={{ $json.user_id }}" },
+            { "fieldId": "month",      "fieldValue": "={{ $json.month }}" },
+            { "fieldId": "type",       "fieldValue": "={{ $json.type }}" },
+            { "fieldId": "title",      "fieldValue": "={{ $json.title }}" },
+            { "fieldId": "body",       "fieldValue": "={{ $json.body }}" },
+            { "fieldId": "sort_order", "fieldValue": "={{ $json.sort_order }}" },
+            { "fieldId": "created_at", "fieldValue": "={{ $json.created_at }}" }
+          ]
+        }
+      },
+      "notes": "IMPORTANTE: Agregar la tabla monthly_insights al schema de Supabase: id, user_id, month, type (positive|warning|tip), title, body, sort_order, created_at."
+    },
+
+    {
+      "id": "9",
+      "name": "✅ Log — Insights generados",
+      "type": "n8n-nodes-base.set",
+      "position": [1760, 0],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            { "name": "status",    "value": "ok",                              "type": "string" },
+            { "name": "timestamp", "value": "={{ new Date().toISOString() }}", "type": "string" }
+          ]
+        }
+      }
+    }
+  ],
+
+  "connections": {
+    "⏰ Cron — Día 1 de cada mes":             { "main": [[ { "node": "🗄️ Supabase — Usuarios Plus activos",    "type": "main", "index": 0 } ]] },
+    "🗄️ Supabase — Usuarios Plus activos":    { "main": [[ { "node": "🗄️ Supabase — Budget del mes anterior",  "type": "main", "index": 0 } ]] },
+    "🗄️ Supabase — Budget del mes anterior":  { "main": [[ { "node": "🗄️ Supabase — Gastos del mes anterior",  "type": "main", "index": 0 } ]] },
+    "🗄️ Supabase — Gastos del mes anterior":  { "main": [[ { "node": "🧮 Preparar datos para Claude",           "type": "main", "index": 0 } ]] },
+    "🧮 Preparar datos para Claude":           { "main": [[ { "node": "🤖 Claude — Generar insights",            "type": "main", "index": 0 } ]] },
+    "🤖 Claude — Generar insights":            { "main": [[ { "node": "🔄 Parsear respuesta de Claude",          "type": "main", "index": 0 } ]] },
+    "🔄 Parsear respuesta de Claude":          { "main": [[ { "node": "🗄️ Supabase — Guardar insights",         "type": "main", "index": 0 } ]] },
+    "🗄️ Supabase — Guardar insights":         { "main": [[ { "node": "✅ Log — Insights generados",             "type": "main", "index": 0 } ]] }
+  },
+
+  "schema_addition_required": {
+    "table": "monthly_insights",
+    "sql": "CREATE TABLE monthly_insights (id UUID PRIMARY KEY DEFAULT gen_random_uuid(), user_id UUID REFERENCES profiles(id), month DATE, type TEXT CHECK (type IN ('positive','warning','tip')), title TEXT, body TEXT, sort_order INTEGER, created_at TIMESTAMPTZ DEFAULT NOW()); ALTER TABLE monthly_insights ENABLE ROW LEVEL SECURITY; CREATE POLICY 'own insights' ON monthly_insights USING (auth.uid() = user_id);"
+  },
+
+  "important_notes": [
+    "Requiere agregar la tabla monthly_insights al schema de Supabase (SQL incluido arriba)",
+    "Claude devuelve JSON — el nodo de parseo tiene try/catch para manejar respuestas malformadas",
+    "Los insights se muestran en el frontend con color según el tipo: positive=verde, warning=amarillo, tip=violeta",
+    "El workflow procesa usuarios de a uno — para muchos usuarios en paralelo, usar el nodo Split In Batches",
+    "Costo aproximado por usuario: ~300 tokens de Claude = ~$0.0003 USD por insight generado"
+  ]
+}
