@@ -5,53 +5,52 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 /* ───────────────────────────────────────────────
-   Sistema "Cauce" — modo claro
-   Marca cobalto · verde ingreso / rojo gasto (AA) · neutros arena calibrados
+   Tokens de Fluir — modo claro (arena suave)
    ─────────────────────────────────────────────── */
 :root {
-  --background: #f7f6f3; /* arena clara, calibrada */
-  --foreground: #191a1f; /* casi negro, no negro puro */
+  --background: #f8f5ef; /* arena suave */
+  --foreground: #1a1a2e;
   --card: #ffffff;
-  --card-foreground: #191a1f;
-  --muted: #efede7;
-  --muted-foreground: #63636e; /* AA sobre el fondo */
-  --border: #e8e5de;
-  --input: #e8e5de;
+  --card-foreground: #1a1a2e;
+  --muted: #ece7dd;
+  --muted-foreground: #6b6b7b;
+  --border: #e3ddd0;
+  --input: #e3ddd0;
 
-  --brand: #1d4ed8; /* cobalto — acento principal */
+  --brand: #6c63ff; /* violeta — acento principal */
   --brand-foreground: #ffffff;
-  --gold: #e8a317; /* ámbar — solo objetivos / tier Gold */
-  --gold-foreground: #2a1e03;
-  --positive: #0a7d53; /* ingreso, superávit (AA) */
-  --negative: #c62f36; /* gasto, excedido (AA) */
+  --gold: #f0b429; /* exclusivo tier Gold */
+  --gold-foreground: #1a1a2e;
+  --positive: #3ebd8f; /* ganancia, superávit */
+  --negative: #e05c5c; /* pérdida, gasto excedido */
 
-  --radius: 0.75rem; /* 12px — más preciso que el 16px anterior */
+  --radius: 1rem;
 }
 
 /* ───────────────────────────────────────────────
-   Sistema "Cauce" — modo oscuro (pensado desde el diseño)
+   Tokens de Fluir — modo oscuro (gris cálido, OLED-safe)
    ─────────────────────────────────────────────── */
 .dark {
-  --background: #0e0f12; /* casi negro, frío */
-  --foreground: #eaebee;
-  --card: #16181d;
-  --card-foreground: #eaebee;
-  --muted: #20222a;
-  --muted-foreground: #9a9ca6;
-  --border: #262932;
-  --input: #262932;
+  --background: #111009; /* no negro absoluto */
+  --foreground: #ede9e0; /* nunca blanco puro */
+  --card: #1b1a12;
+  --card-foreground: #ede9e0;
+  --muted: #26241a;
+  --muted-foreground: #a8a294;
+  --border: #2e2b20;
+  --input: #2e2b20;
 
-  --brand: #6e8bff; /* cobalto más claro sobre fondo oscuro */
-  --brand-foreground: #0b1020; /* texto oscuro sobre el azul claro */
-  --gold: #e8a317;
-  --gold-foreground: #2a1e03;
-  --positive: #35d08b;
-  --negative: #f86f6f;
+  --brand: #8b83ff; /* un toque más brillante sobre fondo oscuro */
+  --brand-foreground: #ffffff;
+  --gold: #f0b429;
+  --gold-foreground: #1a1a2e;
+  --positive: #3ebd8f;
+  --negative: #e05c5c;
 }
 
 /* ───────────────────────────────────────────────
    Mapeo de tokens a utilidades de Tailwind v4
-   (bg-brand, text-positive, font-display, font-mono, etc.)
+   (bg-brand, text-positive, border-border, font-display, etc.)
    ─────────────────────────────────────────────── */
 @theme inline {
   --color-background: var(--background);
@@ -70,10 +69,8 @@
   --color-positive: var(--positive);
   --color-negative: var(--negative);
 
-  /* Geist para UI/títulos, Geist Mono para los montos (tabular) */
-  --font-display: var(--font-geist);
-  --font-sans: var(--font-geist);
-  --font-mono: var(--font-geist-mono);
+  --font-display: var(--font-fraunces);
+  --font-sans: var(--font-inter);
 
   --radius-card: var(--radius);
 }
@@ -81,27 +78,20 @@
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: var(--font-geist), system-ui, -apple-system, sans-serif;
+  font-family: var(--font-inter), system-ui, -apple-system, sans-serif;
   -webkit-font-smoothing: antialiased;
 }
 
-/* Montos: mono + cifras tabulares para que las columnas de plata alineen. */
-.tabular {
-  font-family: var(--font-geist-mono), ui-monospace, monospace;
-  font-variant-numeric: tabular-nums;
-  font-feature-settings: "tnum" 1;
-}
-
-/* ── Elevación neutra y sutil (sin glow de color) ── */
+/* ── Profundidad: sombra suave en las cards (eleva la sensación) ── */
 .rounded-card {
   box-shadow:
     0 1px 2px rgba(17, 16, 9, 0.04),
-    0 2px 6px rgba(17, 16, 9, 0.03);
+    0 4px 12px rgba(17, 16, 9, 0.04);
 }
 .dark .rounded-card {
   box-shadow:
-    0 1px 2px rgba(0, 0, 0, 0.35),
-    0 2px 8px rgba(0, 0, 0, 0.22);
+    0 1px 2px rgba(0, 0, 0, 0.3),
+    0 4px 14px rgba(0, 0, 0, 0.25);
 }
 
 /* ── Foco accesible y prolijo en elementos interactivos ── */
