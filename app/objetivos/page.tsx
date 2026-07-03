@@ -24,21 +24,14 @@ import {
 } from "@/lib/data";
 import type { Goal } from "@/lib/budget-store";
 import { totalSpent } from "@/lib/budget-store";
+import { useInflation } from "@/hooks/useInflation";
+import { projectGoal } from "@/lib/goal-math";
 import { formatARS, cn } from "@/lib/utils";
 
 const MONTHS_ES = [
   "enero", "febrero", "marzo", "abril", "mayo", "junio",
   "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre",
 ];
-
-function monthsLeft(targetDate: string): number {
-  const to = new Date(`${targetDate}T00:00:00`);
-  const now = new Date();
-  return (
-    (to.getFullYear() - now.getFullYear()) * 12 +
-    (to.getMonth() - now.getMonth())
-  );
-}
 
 function deadlineLabel(targetDate: string): string {
   const d = new Date(`${targetDate}T00:00:00`);
@@ -53,6 +46,7 @@ function dateInMonths(n: number): string {
 
 export default function ObjetivosPage() {
   const toast = useToast();
+  const { inflation } = useInflation();
   const [goals, setGoals] = useState<Goal[] | null>(null);
   const [monthlySavings, setMonthlySavings] = useState(0);
   const [showNew, setShowNew] = useState(false);
@@ -129,6 +123,12 @@ export default function ObjetivosPage() {
             <p className="mt-1 text-muted-foreground">
               Ponele nombre, monto y fecha a lo que querés lograr.
             </p>
+            {inflation.lastValue != null && (
+              <p className="mt-1.5 text-xs text-muted-foreground">
+                📈 Proyectado con inflación de {inflation.lastValue}%/mes
+                {inflation.source === "INDEC" ? " (INDEC)" : " (estimado)"}
+              </p>
+            )}
           </div>
           <button
             onClick={() => setShowNew(true)}
@@ -155,6 +155,7 @@ export default function ObjetivosPage() {
                 key={g.id}
                 goal={g}
                 index={i}
+                monthlyRate={inflation.monthlyRate}
                 onContribute={() => setContribFor(g)}
                 onDelete={() => setDeleteId(g.id)}
               />
@@ -168,6 +169,7 @@ export default function ObjetivosPage() {
           al instante desmontándose, que es confiable. */}
       {showNew && (
         <NewGoalModal
+          monthlyRate={inflation.monthlyRate}
           onCreate={handleCreate}
           onClose={() => setShowNew(false)}
         />
@@ -199,22 +201,19 @@ export default function ObjetivosPage() {
 function GoalCard({
   goal,
   index,
+  monthlyRate,
   onContribute,
   onDelete,
 }: {
   goal: Goal;
   index: number;
+  monthlyRate: number;
   onContribute: () => void;
   onDelete: () => void;
 }) {
-  const remaining = Math.max(0, goal.targetAmount - goal.savedAmount);
-  const pct = goal.targetAmount > 0
-    ? Math.min(1, goal.savedAmount / goal.targetAmount)
-    : 0;
-  const done = goal.savedAmount >= goal.targetAmount;
-  const left = monthsLeft(goal.targetDate);
-  const overdue = left < 0 && !done;
-  const perMonth = remaining / Math.max(1, left);
+  const { remaining, pct, done, overdue, perMonth, inflatedTarget } =
+    projectGoal(goal, monthlyRate);
+  const inflated = inflatedTarget > goal.targetAmount;
 
   return (
     <motion.div
@@ -248,6 +247,15 @@ function GoalCard({
           de {formatARS(goal.targetAmount)}
         </span>
       </div>
+
+      {inflated && !done && (
+        <p className="mt-1.5 text-xs text-muted-foreground">
+          📈 Con inflación, a {deadlineLabel(goal.targetDate)} va a costar{" "}
+          <span className="font-medium text-foreground">
+            ~{formatARS(inflatedTarget)}
+          </span>
+        </p>
+      )}
 
       {/* Barra de progreso */}
       <div className="mt-2 h-2.5 overflow-hidden rounded-full bg-muted">
@@ -322,9 +330,11 @@ function EmptyState({ onNew }: { onNew: () => void }) {
 const MONTH_OPTIONS = [3, 6, 12, 24];
 
 function NewGoalModal({
+  monthlyRate,
   onCreate,
   onClose,
 }: {
+  monthlyRate: number;
   onCreate: (name: string, target: number, months: number) => void;
   onClose: () => void;
 }) {
@@ -334,7 +344,8 @@ function NewGoalModal({
   const [error, setError] = useState<string | null>(null);
 
   const target = Number(amount) || 0;
-  const perMonth = target > 0 ? Math.round(target / months) : 0;
+  const inflatedTarget = Math.round(target * Math.pow(1 + monthlyRate, months));
+  const perMonth = target > 0 ? Math.round(inflatedTarget / months) : 0;
 
   function submit() {
     if (!name.trim()) return setError("Ponele un nombre.");
@@ -392,8 +403,13 @@ function NewGoalModal({
       {perMonth > 0 && (
         <p className="mt-4 rounded-2xl bg-brand/10 px-4 py-3 text-sm text-brand">
           <Sparkles size={14} className="mr-1 inline" />
-          Poniendo <strong>{formatARS(perMonth)}/mes</strong> llegás en {months}{" "}
+          Poné <strong>{formatARS(perMonth)}/mes</strong> para llegar en {months}{" "}
           {months === 1 ? "mes" : "meses"}.
+          {inflatedTarget > target && (
+            <span className="mt-1 block text-xs text-brand/80">
+              Contempla que con inflación va a costar ~{formatARS(inflatedTarget)}.
+            </span>
+          )}
         </p>
       )}
 

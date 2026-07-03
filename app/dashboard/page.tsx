@@ -14,10 +14,13 @@ import { ProgressRing } from "@/components/progress-ring";
 import { DashboardSkeleton } from "@/components/skeletons";
 import { useToast } from "@/components/toast";
 import { useUser } from "@/hooks/useUser";
+import { useInflation } from "@/hooks/useInflation";
+import { projectGoal } from "@/lib/goal-math";
 import { formatARS } from "@/lib/utils";
 import {
   getMonthState,
   loadDashboard,
+  loadGoals,
   migrateLocalToSupabase,
   persistExpense,
 } from "@/lib/data";
@@ -25,6 +28,7 @@ import {
   getSavingsGoal,
   spentByCategory,
   type Expense,
+  type Goal,
   type SavedBudget,
 } from "@/lib/budget-store";
 
@@ -32,9 +36,11 @@ export default function DashboardPage() {
   const router = useRouter();
   const toast = useToast();
   const { user } = useUser();
+  const { inflation } = useInflation();
   const [budget, setBudget] = useState<SavedBudget | null>(null);
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [goal, setGoal] = useState(0);
+  const [topGoal, setTopGoal] = useState<Goal | null>(null);
   const [loaded, setLoaded] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
 
@@ -63,6 +69,14 @@ export default function DashboardPage() {
         setGoal(getSavingsGoal());
         setLoaded(true);
       });
+    // Objetivo más cercano a cumplirse, para mostrarlo en el dashboard.
+    loadGoals().then((gs) => {
+      if (!active || gs.length === 0) return;
+      const next = [...gs].sort(
+        (a, b) => a.targetDate.localeCompare(b.targetDate)
+      )[0];
+      setTopGoal(next);
+    });
     return () => {
       active = false;
     };
@@ -195,22 +209,26 @@ export default function DashboardPage() {
           </div>
         )}
 
-        {/* Acceso a Objetivos */}
-        <Link
-          href="/objetivos"
-          className="mt-4 flex items-center gap-3 rounded-card border border-border bg-card p-4 transition-colors hover:bg-muted"
-        >
-          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand/10 text-brand">
-            🎯
-          </span>
-          <div className="min-w-0">
-            <p className="text-sm font-medium">Tus objetivos</p>
-            <p className="text-xs text-muted-foreground">
-              Ahorrá para lo que querés, con plazo y monto
-            </p>
-          </div>
-          <ChevronRight className="ml-auto h-5 w-5 shrink-0 text-muted-foreground" />
-        </Link>
+        {/* Objetivos — objetivo más cercano con proyección por inflación */}
+        {topGoal ? (
+          <TopGoalCard goal={topGoal} monthlyRate={inflation.monthlyRate} />
+        ) : (
+          <Link
+            href="/objetivos"
+            className="mt-4 flex items-center gap-3 rounded-card border border-border bg-card p-4 transition-colors hover:bg-muted"
+          >
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand/10 text-brand">
+              🎯
+            </span>
+            <div className="min-w-0">
+              <p className="text-sm font-medium">Ponete un objetivo</p>
+              <p className="text-xs text-muted-foreground">
+                Ahorrá para lo que querés, con plazo y monto
+              </p>
+            </div>
+            <ChevronRight className="ml-auto h-5 w-5 shrink-0 text-muted-foreground" />
+          </Link>
+        )}
 
         {/* Distribución del presupuesto */}
         <div className="mt-8 mb-3 flex items-center justify-between">
@@ -412,6 +430,48 @@ function CategoryRow({
       </div>
       <p className="mt-1.5 text-xs text-muted-foreground">{note}</p>
     </div>
+  );
+}
+
+const MESES_ES = [
+  "enero", "febrero", "marzo", "abril", "mayo", "junio",
+  "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre",
+];
+
+function TopGoalCard({ goal, monthlyRate }: { goal: Goal; monthlyRate: number }) {
+  const { pct, perMonth, done, overdue } = projectGoal(goal, monthlyRate);
+  const d = new Date(`${goal.targetDate}T00:00:00`);
+  const deadline = `${MESES_ES[d.getMonth()]} ${d.getFullYear()}`;
+
+  return (
+    <Link
+      href="/objetivos"
+      className="mt-4 block rounded-card border border-border bg-card p-5 transition-colors hover:bg-muted/50"
+    >
+      <div className="flex items-center justify-between">
+        <span className="flex items-center gap-2 text-sm font-medium">
+          🎯 {goal.name}
+        </span>
+        <span className="text-xs text-muted-foreground">
+          {Math.round(pct * 100)}%
+        </span>
+      </div>
+      <div className="mt-2 h-2.5 overflow-hidden rounded-full bg-muted">
+        <motion.div
+          initial={{ width: 0 }}
+          animate={{ width: `${pct * 100}%` }}
+          transition={{ duration: 0.7, ease: "easeOut" }}
+          className={`h-full rounded-full ${done ? "bg-positive" : "bg-brand"}`}
+        />
+      </div>
+      <p className="mt-2 text-xs text-muted-foreground">
+        {done
+          ? "¡Objetivo cumplido! 🎉"
+          : overdue
+            ? `Se pasó la fecha · te faltan ${formatARS(goal.targetAmount - goal.savedAmount)}`
+            : `Poné ${formatARS(Math.round(perMonth))}/mes para llegar en ${deadline}`}
+      </p>
+    </Link>
   );
 }
 
