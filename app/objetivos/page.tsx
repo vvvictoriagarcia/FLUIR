@@ -211,7 +211,7 @@ function GoalCard({
   onContribute: () => void;
   onDelete: () => void;
 }) {
-  const { remaining, pct, done, overdue, perMonth, inflatedTarget } =
+  const { remaining, pct, done, overdue, perMonth, inflatedTarget, nominalShare } =
     projectGoal(goal, monthlyRate);
   const inflated = inflatedTarget > goal.targetAmount;
 
@@ -257,18 +257,41 @@ function GoalCard({
         </p>
       )}
 
-      {/* Barra de progreso */}
-      <div className="mt-2 h-2.5 overflow-hidden rounded-full bg-muted">
+      {/* Barra: fondo dividido (precio de hoy | ajuste por inflación) + ahorro */}
+      <div className="relative mt-2 h-2.5 overflow-hidden rounded-full bg-brand/15">
+        {inflated && (
+          <div
+            className="absolute inset-y-0 right-0 bg-negative/25"
+            style={{ left: `${nominalShare * 100}%` }}
+          />
+        )}
         <motion.div
           initial={{ width: 0 }}
           animate={{ width: `${pct * 100}%` }}
           transition={{ duration: 0.6, ease: "easeOut" }}
           className={cn(
-            "h-full rounded-full",
+            "absolute inset-y-0 left-0 rounded-full",
             done ? "bg-positive" : "bg-brand"
           )}
         />
       </div>
+
+      {inflated && !done && (
+        <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] text-muted-foreground">
+          <span className="flex items-center gap-1.5">
+            <span className="h-2 w-2 rounded-full bg-brand" />
+            Ahorrado
+          </span>
+          <span className="flex items-center gap-1.5">
+            <span className="h-2 w-2 rounded-full bg-brand/25" />
+            Precio de hoy
+          </span>
+          <span className="flex items-center gap-1.5">
+            <span className="h-2 w-2 rounded-full bg-negative/30" />
+            Suma la inflación
+          </span>
+        </div>
+      )}
 
       <div className="mt-3 flex items-center justify-between text-sm">
         {done ? (

@@ -20,8 +20,10 @@ export interface GoalProjection {
   perMonth: number;
   done: boolean;
   overdue: boolean;
-  /** % de avance sobre el objetivo nominal de hoy (para la barra). */
+  /** % ahorrado sobre el costo REAL (ajustado por inflación) — para la barra. */
   pct: number;
+  /** Dónde queda el precio de hoy dentro del costo futuro (0..1). */
+  nominalShare: number;
 }
 
 /**
@@ -38,9 +40,9 @@ export function projectGoal(goal: Goal, monthlyRate: number): GoalProjection {
   const remaining = Math.max(0, inflatedTarget - goal.savedAmount);
   const perMonth = remaining / Math.max(1, left);
   const pct =
-    goal.targetAmount > 0
-      ? Math.min(1, goal.savedAmount / goal.targetAmount)
-      : 0;
+    inflatedTarget > 0 ? Math.min(1, goal.savedAmount / inflatedTarget) : 0;
+  const nominalShare =
+    inflatedTarget > 0 ? Math.min(1, goal.targetAmount / inflatedTarget) : 1;
   return {
     monthsLeft: left,
     inflatedTarget,
@@ -49,5 +51,6 @@ export function projectGoal(goal: Goal, monthlyRate: number): GoalProjection {
     done,
     overdue: left < 0 && !done,
     pct,
+    nominalShare,
   };
 }
