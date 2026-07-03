@@ -1,18 +1,18 @@
 import type { Metadata, Viewport } from "next";
-import { Fraunces, Inter } from "next/font/google";
+import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { ToastProvider } from "@/components/toast";
 
-// Display / títulos — serif variable, editorial, con carácter
-const fraunces = Fraunces({
-  variable: "--font-fraunces",
+// UI y títulos — grotesk geométrica, tono fintech
+const geist = Geist({
+  variable: "--font-geist",
   subsets: ["latin"],
   display: "swap",
 });
 
-// UI / body / números — óptima para datos financieros
-const inter = Inter({
-  variable: "--font-inter",
+// Montos — mono con cifras tabulares para alinear columnas de plata
+const geistMono = Geist_Mono({
+  variable: "--font-geist-mono",
   subsets: ["latin"],
   display: "swap",
 });
@@ -26,7 +26,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#6C63FF",
+  themeColor: "#1D4ED8",
 };
 
 // Aplica el tema guardado antes del primer pintado para evitar el flash de color.
@@ -39,7 +39,7 @@ export default function RootLayout({
     <html
       lang="es"
       suppressHydrationWarning
-      className={`${fraunces.variable} ${inter.variable} h-full`}
+      className={`${geist.variable} ${geistMono.variable} h-full`}
     >
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeInit }} />
