@@ -58,6 +58,17 @@ create table if not exists expenses (
   created_at  timestamptz default now()
 );
 
+-- 6) Objetivos de ahorro con plazo y monto (Free)
+create table if not exists goals (
+  id            uuid primary key default gen_random_uuid(),
+  user_id       uuid references profiles(id) on delete cascade,
+  name          text not null,
+  target_amount numeric not null,
+  target_date   date not null,           -- fecha límite del objetivo
+  saved_amount  numeric not null default 0,
+  created_at    timestamptz default now()
+);
+
 -- ── Trigger: al registrarse un usuario, crear su perfil y su fila de onboarding
 -- `set search_path = public` es clave: sin esto, la función security definer
 -- no encuentra las tablas y el registro falla con "Database error saving new user".
@@ -92,6 +103,7 @@ alter table onboarding_answers enable row level security;
 alter table budgets            enable row level security;
 alter table budget_categories  enable row level security;
 alter table expenses           enable row level security;
+alter table goals              enable row level security;
 
 create policy "own profile"   on profiles
   for all using (auth.uid() = id) with check (auth.uid() = id);
@@ -103,6 +115,9 @@ create policy "own budgets"   on budgets
   for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
 
 create policy "own expenses"  on expenses
+  for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+
+create policy "own goals"     on goals
   for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
 
 -- Las categorías se ven si el presupuesto padre es del usuario

@@ -16,7 +16,7 @@ import {
   type GoesOutLevel,
   type OnboardingAnswers,
 } from "@/lib/calculators/budget";
-import type { Expense, SavedBudget } from "@/lib/budget-store";
+import type { Expense, Goal, SavedBudget } from "@/lib/budget-store";
 
 function firstOfMonth(): string {
   const d = new Date();
@@ -100,6 +100,92 @@ function buildAnswers(
     spends_on_clothes: (ans?.spends_on_clothes as ClothesLevel) ?? "moderado",
     has_debt: !!ans?.has_debt,
   };
+}
+
+const MONTHS_ES = [
+  "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
+  "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre",
+];
+
+/** 'YYYY-MM' o 'YYYY-MM-01' → 'Junio 2026'. */
+function monthLabel(month: string): string {
+  const [y, m] = month.split("-");
+  return `${MONTHS_ES[Number(m) - 1] ?? m} ${y}`;
+}
+
+export interface MonthSummary {
+  month: string; // 'YYYY-MM-01'
+  label: string; // 'Junio 2026'
+  income: number;
+  spent: number;
+  saved: number; // income - spent
+  savedPct: number; // saved / income (0 si income 0)
+  topCategory: { category: string; amount: number } | null;
+  txCount: number;
+}
+
+function buildSummary(
+  month: string,
+  income: number,
+  expenses: { category: string; amount: number }[]
+): MonthSummary {
+  const spent = expenses.reduce((s, e) => s + e.amount, 0);
+  const saved = income - spent;
+  const byCat = new Map<string, number>();
+  for (const e of expenses) {
+    byCat.set(e.category, (byCat.get(e.category) ?? 0) + e.amount);
+  }
+  let topCategory: MonthSummary["topCategory"] = null;
+  for (const [category, amount] of byCat) {
+    if (!topCategory || amount > topCategory.amount) topCategory = { category, amount };
+  }
+  return {
+    month,
+    label: monthLabel(month),
+    income,
+    spent,
+    saved,
+    savedPct: income > 0 ? saved / income : 0,
+    topCategory,
+    txCount: expenses.length,
+  };
+}
+
+/**
+ * Historial de meses cerrados (Plus), del más reciente al más viejo.
+ * Con sesión lee todos los `budgets` del usuario; en demo devuelve el único
+ * mes que vive en localStorage (el historial se llena mes a mes en la nube).
+ */
+export async function loadHistory(): Promise<MonthSummary[]> {
+  const uid = await getUserId();
+
+  if (!uid) {
+    const b = local.loadBudget();
+    if (!b) return [];
+    const exps = local.loadExpenses();
+    return [buildSummary(`${b.month}-01`, b.income, exps)];
+  }
+
+  const supabase = createClient();
+  const { data: budgets } = await supabase
+    .from("budgets")
+    .select("id, month, income")
+    .eq("user_id", uid)
+    .order("month", { ascending: false });
+  if (!budgets?.length) return [];
+
+  const ids = budgets.map((b) => b.id);
+  const { data: exps } = await supabase
+    .from("expenses")
+    .select("budget_id, category, amount")
+    .in("budget_id", ids);
+
+  return budgets.map((b) => {
+    const mine = (exps ?? [])
+      .filter((e) => e.budget_id === b.id)
+      .map((e) => ({ category: e.category as string, amount: Number(e.amount) }));
+    return buildSummary(b.month as string, Number(b.income), mine);
+  });
 }
 
 export interface PreviousMonth {
@@ -435,6 +521,131 @@ export async function removeExpense(id: string): Promise<void> {
   const supabase = createClient();
   const { error } = await supabase
     .from("expenses")
+    .delete()
+    .eq("id", id)
+    .eq("user_id", uid);
+  if (error) throw new Error(error.message);
+}
+
+// ── Objetivos con plazo y monto (Free) ─────────────────────────────
+
+type GoalRow = {
+  id: string;
+  name: string;
+  target_amount: number | string;
+  target_date: string;
+  saved_amount: number | string;
+  created_at: string;
+};
+
+function mapGoal(r: GoalRow): Goal {
+  return {
+    id: r.id,
+    name: r.name,
+    targetAmount: Number(r.target_amount),
+    targetDate: r.target_date,
+    savedAmount: Number(r.saved_amount),
+    createdAt: r.created_at,
+  };
+}
+
+const GOAL_COLS = "id, name, target_amount, target_date, saved_amount, created_at";
+
+/** Lista los objetivos del usuario (más viejos primero). */
+export async function loadGoals(): Promise<Goal[]> {
+  const uid = await getUserId();
+  if (!uid) return local.loadGoals();
+
+  const supabase = createClient();
+  const { data } = await supabase
+    .from("goals")
+    .select(GOAL_COLS)
+    .eq("user_id", uid)
+    .order("created_at", { ascending: true });
+  return (data ?? []).map(mapGoal);
+}
+
+/** Crea un objetivo. `targetDate` en 'YYYY-MM-DD'. */
+export async function createGoal(
+  name: string,
+  targetAmount: number,
+  targetDate: string
+): Promise<Goal> {
+  const uid = await getUserId();
+  if (!uid) {
+    const goal: Goal = {
+      id: crypto.randomUUID(),
+      name,
+      targetAmount,
+      targetDate,
+      savedAmount: 0,
+      createdAt: new Date().toISOString(),
+    };
+    local.saveGoals([...local.loadGoals(), goal]);
+    return goal;
+  }
+
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("goals")
+    .insert({
+      user_id: uid,
+      name,
+      target_amount: targetAmount,
+      target_date: targetDate,
+    })
+    .select(GOAL_COLS)
+    .single();
+  if (error || !data) {
+    throw new Error(error?.message ?? "No se pudo crear el objetivo");
+  }
+  return mapGoal(data);
+}
+
+/**
+ * Suma `amount` a lo ahorrado de un objetivo (puede ser negativo para corregir).
+ * Nunca baja de 0. Devuelve el nuevo total ahorrado.
+ */
+export async function addToGoal(id: string, amount: number): Promise<number> {
+  const uid = await getUserId();
+  if (!uid) {
+    let saved = 0;
+    const next = local.loadGoals().map((g) => {
+      if (g.id !== id) return g;
+      saved = Math.max(0, g.savedAmount + amount);
+      return { ...g, savedAmount: saved };
+    });
+    local.saveGoals(next);
+    return saved;
+  }
+
+  const supabase = createClient();
+  const { data: cur } = await supabase
+    .from("goals")
+    .select("saved_amount")
+    .eq("id", id)
+    .eq("user_id", uid)
+    .maybeSingle();
+  const saved = Math.max(0, Number(cur?.saved_amount ?? 0) + amount);
+  const { error } = await supabase
+    .from("goals")
+    .update({ saved_amount: saved })
+    .eq("id", id)
+    .eq("user_id", uid);
+  if (error) throw new Error(error.message);
+  return saved;
+}
+
+/** Elimina un objetivo. */
+export async function deleteGoal(id: string): Promise<void> {
+  const uid = await getUserId();
+  if (!uid) {
+    local.saveGoals(local.loadGoals().filter((g) => g.id !== id));
+    return;
+  }
+  const supabase = createClient();
+  const { error } = await supabase
+    .from("goals")
     .delete()
     .eq("id", id)
     .eq("user_id", uid);

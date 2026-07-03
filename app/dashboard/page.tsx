@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
-import { Plus } from "lucide-react";
+import { Plus, ChevronRight } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { BottomNav } from "@/components/bottom-nav";
 import { BudgetDonut } from "@/components/budget-donut";
@@ -194,6 +194,23 @@ export default function DashboardPage() {
             </p>
           </div>
         )}
+
+        {/* Acceso a Objetivos */}
+        <Link
+          href="/objetivos"
+          className="mt-4 flex items-center gap-3 rounded-card border border-border bg-card p-4 transition-colors hover:bg-muted"
+        >
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand/10 text-brand">
+            🎯
+          </span>
+          <div className="min-w-0">
+            <p className="text-sm font-medium">Tus objetivos</p>
+            <p className="text-xs text-muted-foreground">
+              Ahorrá para lo que querés, con plazo y monto
+            </p>
+          </div>
+          <ChevronRight className="ml-auto h-5 w-5 shrink-0 text-muted-foreground" />
+        </Link>
 
         {/* Distribución del presupuesto */}
         <div className="mt-8 mb-3 flex items-center justify-between">

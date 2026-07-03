@@ -9,6 +9,7 @@ import type { BudgetResult, OnboardingAnswers } from "@/lib/calculators/budget";
 const BUDGET_KEY = "fluir_budget";
 const EXPENSES_KEY = "fluir_expenses";
 const SAVINGS_GOAL_KEY = "fluir_savings_goal";
+const GOALS_KEY = "fluir_goals";
 
 export interface SavedBudget {
   income: number;
@@ -24,6 +25,15 @@ export interface Expense {
   amount: number;
   description: string;
   date: string; // ISO
+}
+
+export interface Goal {
+  id: string;
+  name: string;
+  targetAmount: number;
+  targetDate: string; // "YYYY-MM-DD" (fecha límite)
+  savedAmount: number;
+  createdAt: string; // ISO
 }
 
 function currentMonth(): string {
@@ -132,5 +142,22 @@ export function getSavingsGoal(): number {
 export function setSavingsGoal(amount: number) {
   try {
     localStorage.setItem(SAVINGS_GOAL_KEY, String(amount));
+  } catch {}
+}
+
+// ── Objetivos con plazo y monto (Free; local o Supabase vía data.ts) ──
+
+export function loadGoals(): Goal[] {
+  try {
+    const raw = localStorage.getItem(GOALS_KEY);
+    return raw ? (JSON.parse(raw) as Goal[]) : [];
+  } catch {
+    return [];
+  }
+}
+
+export function saveGoals(goals: Goal[]) {
+  try {
+    localStorage.setItem(GOALS_KEY, JSON.stringify(goals));
   } catch {}
 }

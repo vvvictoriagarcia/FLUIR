@@ -11,9 +11,11 @@ import {
   Sparkles,
   ShieldCheck,
   FileText,
+  Target,
 } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { BottomNav } from "@/components/bottom-nav";
+import { PlanPreviewToggle } from "@/components/gates/plan-preview-toggle";
 import { useUser } from "@/hooks/useUser";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
 
@@ -83,11 +85,14 @@ export default function PerfilPage() {
 
         {/* Menú */}
         <div className="mt-4 overflow-hidden rounded-card border border-border bg-card">
+          <Row href="/objetivos" icon={Target} label="Objetivos" hint="Metas de ahorro con plazo y monto" />
           <Row href="/perfil/presupuesto" icon={Tags} label="Mi presupuesto" hint="Ajustá los montos reales de cada categoría" />
           <Row href="/perfil/financiero" icon={SlidersHorizontal} label="Perfil financiero" hint="Ingreso, vivienda, estilo de vida" />
           <Row href="/perfil/notificaciones" icon={Bell} label="Notificaciones" hint="Avisos y recordatorios" />
           <Row href="/perfil/cuenta" icon={ShieldCheck} label="Tus datos" hint="Exportar o borrar tu cuenta" />
         </div>
+
+        <PlanPreviewToggle />
 
         {/* Apariencia */}
         <div className="mt-4 flex items-center justify-between rounded-card border border-border bg-card p-4">
