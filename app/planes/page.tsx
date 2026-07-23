@@ -87,7 +87,7 @@ export default function PlanesPage() {
     }
 
     setLoading(plan);
-    window.location.assign(checkoutUrl(plan, user.id));
+    window.location.assign(checkoutUrl(plan));
   }
 
   async function cancelar() {

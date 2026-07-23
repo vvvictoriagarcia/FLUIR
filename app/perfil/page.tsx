@@ -20,11 +20,15 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { BottomNav } from "@/components/bottom-nav";
 import { PlanPreviewToggle } from "@/components/gates/plan-preview-toggle";
 import { useUser } from "@/hooks/useUser";
+import { usePlan } from "@/hooks/usePlan";
+import { PLAN_LABELS } from "@/lib/plan";
+import { cn } from "@/lib/utils";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
 
 export default function PerfilPage() {
   const router = useRouter();
   const { user, loading } = useUser();
+  const { plan, loading: planLoading } = usePlan();
 
   async function handleLogout() {
     if (isSupabaseConfigured) {
@@ -66,12 +70,22 @@ export default function PerfilPage() {
                 : user?.email ?? "Estás usando Fluir sin cuenta"}
             </p>
           </div>
-          <span className="ml-auto rounded-full bg-muted px-2.5 py-1 text-xs font-medium">
-            Free
+          <span
+            className={cn(
+              "ml-auto rounded-full px-2.5 py-1 text-xs font-medium",
+              plan === "gold"
+                ? "bg-gold/15 text-gold"
+                : plan === "plus"
+                  ? "bg-brand/10 text-brand"
+                  : "bg-muted",
+            )}
+          >
+            {planLoading ? "…" : PLAN_LABELS[plan]}
           </span>
         </div>
 
-        {/* Banner mejorar plan */}
+        {/* Banner mejorar plan (solo si hay a dónde subir) */}
+        {plan !== "gold" && (
         <Link
           href="/planes"
           className="mt-4 flex items-center gap-3 rounded-card border border-gold/40 bg-gold/10 p-4 transition-colors hover:bg-gold/15"
@@ -85,6 +99,7 @@ export default function PerfilPage() {
           </div>
           <ChevronRight className="ml-auto h-5 w-5 text-muted-foreground" />
         </Link>
+        )}
 
         {/* Menú */}
         <div className="mt-4 overflow-hidden rounded-card border border-border bg-card">

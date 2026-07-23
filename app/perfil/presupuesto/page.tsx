@@ -15,7 +15,7 @@ import {
   type BudgetCategory,
   type OnboardingAnswers,
 } from "@/lib/calculators/budget";
-import { formatARS } from "@/lib/utils";
+import { formatARS, cn } from "@/lib/utils";
 
 export default function PresupuestoPage() {
   const router = useRouter();
@@ -79,6 +79,14 @@ export default function PresupuestoPage() {
     ]);
     setLimits((prev) => ({ ...prev, [name]: 0 }));
     setNewCat("");
+  }
+
+  function toggleFixed(category: string) {
+    setBase((prev) =>
+      prev.map((c) =>
+        c.category === category ? { ...c, is_fixed: !c.is_fixed } : c,
+      ),
+    );
   }
 
   function removeCategory(category: string) {
@@ -155,6 +163,16 @@ export default function PresupuestoPage() {
         </div>
 
         {/* Editor de montos */}
+        <p className="mb-3 text-xs leading-relaxed text-muted-foreground">
+          El switch marca si el gasto es <strong>fijo</strong> (se descuenta de
+          tu ingreso apenas arranca el mes: alquiler, cuotas) o{" "}
+          <strong>variable</strong> (lo vas gastando: comida, salidas). Para que
+          además te avisemos el día que vence, cargalo en{" "}
+          <Link href="/pagos" className="font-medium text-brand">
+            Pagos fijos
+          </Link>
+          .
+        </p>
         <div className="space-y-3">
           {base.map((c) => (
             <div
@@ -163,11 +181,31 @@ export default function PresupuestoPage() {
             >
               <span className="flex min-w-0 items-center gap-2 font-medium">
                 <span className="truncate">{c.category}</span>
-                {c.is_fixed && (
-                  <span className="shrink-0 rounded bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">
-                    fijo
-                  </span>
-                )}
+                <button
+                  onClick={() => toggleFixed(c.category)}
+                  role="switch"
+                  aria-checked={c.is_fixed}
+                  aria-label={`Marcar ${c.category} como gasto fijo`}
+                  title={
+                    c.is_fixed
+                      ? "Fijo: se descuenta de tu ingreso apenas empieza el mes"
+                      : "Variable: lo vas gastando durante el mes"
+                  }
+                  className={cn(
+                    "relative h-5 w-9 shrink-0 rounded-full transition-colors",
+                    c.is_fixed ? "bg-brand" : "bg-muted",
+                  )}
+                >
+                  <span
+                    className={cn(
+                      "absolute top-0.5 h-4 w-4 rounded-full bg-white transition-transform",
+                      c.is_fixed ? "translate-x-[1.15rem]" : "translate-x-0.5",
+                    )}
+                  />
+                </button>
+                <span className="shrink-0 text-[11px] text-muted-foreground">
+                  {c.is_fixed ? "fijo" : "variable"}
+                </span>
               </span>
               <div className="flex shrink-0 items-center gap-2">
                 <div className="flex items-center gap-1 rounded-lg border border-border bg-background px-3 py-1.5">

@@ -39,13 +39,13 @@ export function decodeRef(ref: string): { userId: string; plan: PaidPlan } | nul
 }
 
 /**
- * URL del checkout de suscripción. Si hay sesión le pasamos el
- * external_reference; si Mercado Pago lo propaga, el webhook activa el plan
- * solo. Si no lo propaga, el webhook cae al match por email del pagador.
+ * URL del checkout de suscripción.
+ *
+ * OJO: el checkout de planes NO acepta parámetros extra — agregarle
+ * `external_reference` hacía fallar el pago con "Tuvimos un problema" (SUB03).
+ * Por eso el link va pelado y al pagador lo identificamos en el webhook por el
+ * mail con el que pagó.
  */
-export function checkoutUrl(plan: PaidPlan, userId?: string | null): string {
-  const base = `https://www.mercadopago.com.ar/subscriptions/checkout?preapproval_plan_id=${MP_PLAN_ID[plan]}`;
-  return userId
-    ? `${base}&external_reference=${encodeURIComponent(encodeRef(userId, plan))}`
-    : base;
+export function checkoutUrl(plan: PaidPlan): string {
+  return `https://www.mercadopago.com.ar/subscriptions/checkout?preapproval_plan_id=${MP_PLAN_ID[plan]}`;
 }
