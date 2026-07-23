@@ -18,7 +18,7 @@ const ITEMS: Item[] = [
   { label: "Inicio", icon: Home, href: "/dashboard" },
   { label: "Gastos", icon: Receipt, href: "/gastos" },
   { label: "Historial", icon: History, href: "/historial" },
-  { label: "Gold", icon: TrendingUp, soon: "Gold: inversiones — próximamente", gold: true },
+  { label: "Gold", icon: TrendingUp, href: "/invertir", gold: true },
   { label: "Perfil", icon: User, href: "/perfil" },
 ];
 
