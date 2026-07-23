@@ -7,6 +7,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Plus, ChevronRight } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { BottomNav } from "@/components/bottom-nav";
+import { UpcomingPayments } from "@/components/upcoming-payments";
+import { touchLastSeen } from "@/lib/profile";
 import { BudgetDonut } from "@/components/budget-donut";
 import { ExpenseModal } from "@/components/expense-modal";
 import { AnimatedNumber } from "@/components/animated-number";
@@ -48,6 +50,8 @@ export default function DashboardPage() {
     // Carga inicial: Supabase si hay sesión, si no localStorage. Async porque
     // consulta la base / el storage, que solo existen en el cliente.
     let active = true;
+    // Señal de actividad para las campañas de mail (best-effort, no bloquea).
+    touchLastSeen().catch(() => {});
     // Migra datos del demo a la cuenta (si recién te logueaste) y luego carga.
     migrateLocalToSupabase()
       .catch(() => {})
@@ -208,6 +212,9 @@ export default function DashboardPage() {
             </p>
           </div>
         )}
+
+        {/* Pagos fijos: lo que se viene */}
+        <UpcomingPayments />
 
         {/* Objetivos — objetivo más cercano con proyección por inflación */}
         {topGoal ? (
