@@ -6,6 +6,8 @@ import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
 import { migrateLocalToSupabase } from "@/lib/data";
+import { authErrorMessage } from "@/lib/auth-errors";
+import { readNext } from "@/lib/next-url";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -34,12 +36,12 @@ export default function LoginPage() {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) {
       setLoading(false);
-      setError("Email o contraseña incorrectos.");
+      setError(authErrorMessage(error, "Email o contraseña incorrectos."));
       return;
     }
     // Si armó un presupuesto como invitado, lo subimos a su cuenta.
     await migrateLocalToSupabase().catch(() => false);
-    router.push("/dashboard");
+    router.push(readNext("/dashboard"));
   }
 
   async function handleGoogle() {
@@ -50,10 +52,15 @@ export default function LoginPage() {
     const supabase = createClient();
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
-      options: { redirectTo: `${window.location.origin}/dashboard` },
+      options: { redirectTo: `${window.location.origin}${readNext("/dashboard")}` },
     });
     if (error) {
-      setError("El login con Google todavía no está activado. Usá email por ahora.");
+      setError(
+        authErrorMessage(
+          error,
+          "El login con Google todavía no está activado. Usá email por ahora.",
+        ),
+      );
     }
   }
 

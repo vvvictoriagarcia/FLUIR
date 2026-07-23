@@ -17,12 +17,33 @@ const inter = Inter({
   display: "swap",
 });
 
+const SITE_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://fluirargentina.com";
+const TITLE = "Fluir — Tu plata, en orden";
+const DESCRIPTION =
+  "Tu presupuesto personal en 3 minutos. Sin Excel, sin fórmulas. Solo respondé 6 preguntas y Fluir hace el resto.";
+
 export const metadata: Metadata = {
-  title: "Fluir — Tu plata, en orden",
-  description:
-    "Tu presupuesto personal en 3 minutos. Sin Excel, sin fórmulas. Solo respondé 6 preguntas y Fluir hace el resto.",
+  metadataBase: new URL(SITE_URL),
+  title: { default: TITLE, template: "%s · Fluir" },
+  description: DESCRIPTION,
+  applicationName: "Fluir",
+  alternates: { canonical: "/" },
   icons: { icon: "/icon.svg", apple: "/icon.svg" },
   appleWebApp: { capable: true, statusBarStyle: "default", title: "Fluir" },
+  // Sin esto, compartir el link en WhatsApp/Instagram/LinkedIn no muestra nada.
+  openGraph: {
+    type: "website",
+    url: SITE_URL,
+    siteName: "Fluir",
+    title: TITLE,
+    description: DESCRIPTION,
+    locale: "es_AR",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: TITLE,
+    description: DESCRIPTION,
+  },
 };
 
 export const viewport: Viewport = {

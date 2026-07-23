@@ -5,6 +5,9 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
+import { authErrorMessage } from "@/lib/auth-errors";
+import { readNext } from "@/lib/next-url";
+import { saveEmailPrefs } from "@/lib/profile";
 import { migrateLocalToSupabase } from "@/lib/data";
 import { AuthShell, Field, Separator } from "../login/page";
 
@@ -14,6 +17,7 @@ export default function RegisterPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [accepted, setAccepted] = useState(false);
+  const [news, setNews] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [sent, setSent] = useState(false);
@@ -36,19 +40,22 @@ export default function RegisterPage() {
       password,
       options: {
         data: { full_name: name },
-        emailRedirectTo: `${window.location.origin}/auth/callback?next=/onboarding`,
+        emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(readNext("/onboarding"))}`,
       },
     });
     setLoading(false);
     if (error) {
-      setError(error.message);
+      setError(authErrorMessage(error, "No pudimos crear tu cuenta."));
       return;
     }
+    // Consentimiento de marketing, tal cual lo eligió al registrarse.
+    await saveEmailPrefs({ marketing: news, product: true }).catch(() => false);
+
     // Si hay sesión, entró directo. Si no, hay que confirmar el email.
     if (data.session) {
       // Migrar el presupuesto que armó como invitado (si lo hizo).
       const migrated = await migrateLocalToSupabase().catch(() => false);
-      router.push(migrated ? "/dashboard" : "/onboarding");
+      router.push(readNext(migrated ? "/dashboard" : "/onboarding"));
     } else {
       setSent(true);
     }
@@ -82,10 +89,15 @@ export default function RegisterPage() {
     const supabase = createClient();
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
-      options: { redirectTo: `${window.location.origin}/onboarding` },
+      options: { redirectTo: `${window.location.origin}${readNext("/onboarding")}` },
     });
     if (error) {
-      setError("El login con Google todavía no está activado. Usá email por ahora.");
+      setError(
+        authErrorMessage(
+          error,
+          "El login con Google todavía no está activado. Usá email por ahora.",
+        ),
+      );
     }
   }
 
@@ -112,6 +124,19 @@ export default function RegisterPage() {
             <Link href="/privacidad" target="_blank" className="font-medium text-brand underline-offset-2 hover:underline">
               política de privacidad
             </Link>
+          </span>
+        </label>
+
+        <label className="flex items-start gap-2 text-sm text-muted-foreground">
+          <input
+            type="checkbox"
+            checked={news}
+            onChange={(e) => setNews(e.target.checked)}
+            className="mt-0.5 accent-[var(--brand)]"
+          />
+          <span>
+            Mandame tips para ahorrar y novedades de Fluir (podés cortarlo cuando
+            quieras)
           </span>
         </label>
 

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
+import { authErrorMessage } from "@/lib/auth-errors";
 import { AuthShell, Field } from "../login/page";
 import { FullScreenLoader } from "@/components/loading";
 
@@ -53,7 +54,9 @@ export default function ActualizarClavePage() {
     const { error } = await supabase.auth.updateUser({ password });
     setLoading(false);
     if (error) {
-      setError("No pudimos actualizar la contraseña. Pedí un link nuevo.");
+      setError(
+        authErrorMessage(error, "No pudimos actualizar la contraseña. Pedí un link nuevo."),
+      );
       return;
     }
     setDone(true);

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
+import { authErrorMessage } from "@/lib/auth-errors";
 import { AuthShell, Field } from "../login/page";
 
 export default function RecuperarPage() {
@@ -25,7 +26,9 @@ export default function RecuperarPage() {
     });
     setLoading(false);
     if (error) {
-      setError("No pudimos enviar el link. Probá de nuevo en un rato.");
+      setError(
+        authErrorMessage(error, "No pudimos enviar el link. Probá de nuevo en un rato."),
+      );
       return;
     }
     setSent(true);
