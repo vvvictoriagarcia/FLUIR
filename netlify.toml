@@ -9,5 +9,13 @@
   # Igualamos la versión de Node con la que buildeás en local (Next 16 pide 20+).
   NODE_VERSION = "22"
 
+  # El escáner de secretos de Netlify frena el build si encuentra el valor de
+  # una variable en el código. Las NEXT_PUBLIC_* son públicas por definición
+  # (Next las hornea en el bundle que baja el navegador), así que no tiene
+  # sentido tratarlas como secretos. Las que SÍ son secretas
+  # (SUPABASE_SERVICE_ROLE_KEY, MP_ACCESS_TOKEN, MP_WEBHOOK_SECRET,
+  # ANTHROPIC_API_KEY) se siguen escaneando.
+  SECRETS_SCAN_OMIT_KEYS = "NEXT_PUBLIC_APP_URL,NEXT_PUBLIC_SUPABASE_URL,NEXT_PUBLIC_SUPABASE_ANON_KEY,MP_PUBLIC_KEY"
+
 [[plugins]]
   package = "@netlify/plugin-nextjs"
