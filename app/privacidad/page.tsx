@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { LegalShell, LegalSection } from "@/components/legal-shell";
+import { SUPPORT_EMAIL } from "@/lib/contact";
 
 export const metadata: Metadata = {
   title: "Política de Privacidad · Fluir",
@@ -20,8 +21,8 @@ export default function PrivacidadPage() {
         <p>
           El responsable del tratamiento es Fluir. Podés contactarnos por
           cualquier tema de privacidad en{" "}
-          <a href="mailto:hola@fluir.app" className="font-medium text-brand">
-            hola@fluir.app
+          <a href={`mailto:${SUPPORT_EMAIL}`} className="font-medium text-brand">
+            {SUPPORT_EMAIL}
           </a>
           .
         </p>

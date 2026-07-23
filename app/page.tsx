@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import { ArrowRight, Sparkles, Target, TrendingUp, Zap } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { useUser } from "@/hooks/useUser";
+import { SUPPORT_EMAIL } from "@/lib/contact";
 
 const CHECKS = [
   "Sin tarjeta",
@@ -166,8 +167,12 @@ export default function Landing() {
         </div>
       </section>
 
-      <footer className="border-t border-border py-6 text-center text-sm text-muted-foreground">
-        <div className="flex items-center justify-center gap-4">
+      <footer className="border-t border-border px-6 py-8 text-center text-sm text-muted-foreground">
+        <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2">
+          <Link href="/contacto" className="transition-colors hover:text-foreground">
+            Ayuda y contacto
+          </Link>
+          <span aria-hidden>·</span>
           <Link href="/terminos" className="transition-colors hover:text-foreground">
             Términos
           </Link>
@@ -175,7 +180,20 @@ export default function Landing() {
           <Link href="/privacidad" className="transition-colors hover:text-foreground">
             Privacidad
           </Link>
+          <span aria-hidden>·</span>
+          <Link
+            href="/contacto#arrepentimiento"
+            className="transition-colors hover:text-foreground"
+          >
+            Botón de arrepentimiento
+          </Link>
         </div>
+        <a
+          href={`mailto:${SUPPORT_EMAIL}`}
+          className="mt-3 inline-block transition-colors hover:text-foreground"
+        >
+          {SUPPORT_EMAIL}
+        </a>
         <p className="mt-2">Fluir · Hecho en Argentina 🇦🇷</p>
       </footer>
     </div>

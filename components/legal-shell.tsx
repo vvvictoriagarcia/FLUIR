@@ -1,14 +1,21 @@
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
+import { SUPPORT_EMAIL } from "@/lib/contact";
 
-/** Contenedor común para las páginas legales (términos, privacidad). */
+/** Contenedor común para las páginas legales (términos, privacidad, contacto). */
 export function LegalShell({
   title,
+  subtitle,
   updated,
+  showContactLink = true,
   children,
 }: {
   title: string;
-  updated: string;
+  /** Bajada opcional (reemplaza a "Última actualización"). */
+  subtitle?: string;
+  updated?: string;
+  /** El pie linkea a /contacto (se apaga en la propia página de contacto). */
+  showContactLink?: boolean;
   children: React.ReactNode;
 }) {
   return (
@@ -33,9 +40,11 @@ export function LegalShell({
         <h1 className="font-display text-3xl font-semibold tracking-tight">
           {title}
         </h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Última actualización: {updated}
-        </p>
+        {(subtitle || updated) && (
+          <p className="mt-1 text-sm text-muted-foreground">
+            {subtitle ?? `Última actualización: ${updated}`}
+          </p>
+        )}
 
         <div className="mt-8 space-y-7 text-[15px] leading-relaxed text-foreground/90">
           {children}
@@ -43,9 +52,18 @@ export function LegalShell({
 
         <p className="mt-12 border-t border-border pt-6 text-sm text-muted-foreground">
           ¿Dudas? Escribinos a{" "}
-          <a href="mailto:hola@fluir.app" className="font-medium text-brand">
-            hola@fluir.app
+          <a href={`mailto:${SUPPORT_EMAIL}`} className="font-medium text-brand">
+            {SUPPORT_EMAIL}
           </a>
+          {showContactLink && (
+            <>
+              {" "}
+              o entrá a{" "}
+              <Link href="/contacto" className="font-medium text-brand">
+                Ayuda y contacto
+              </Link>
+            </>
+          )}
           .
         </p>
       </div>
@@ -57,14 +75,17 @@ export function LegalShell({
 export function LegalSection({
   n,
   title,
+  id,
   children,
 }: {
   n: number;
   title: string;
+  /** Ancla para linkear la sección desde afuera (p. ej. #arrepentimiento). */
+  id?: string;
   children: React.ReactNode;
 }) {
   return (
-    <section>
+    <section id={id} className="scroll-mt-6">
       <h2 className="font-display text-lg font-semibold">
         {n}. {title}
       </h2>

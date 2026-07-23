@@ -12,6 +12,9 @@ import {
   ShieldCheck,
   FileText,
   Target,
+  Upload,
+  LifeBuoy,
+  CalendarClock,
 } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { BottomNav } from "@/components/bottom-nav";
@@ -85,11 +88,14 @@ export default function PerfilPage() {
 
         {/* Menú */}
         <div className="mt-4 overflow-hidden rounded-card border border-border bg-card">
+          <Row href="/pagos" icon={CalendarClock} label="Pagos fijos" hint="Alquiler, tarjeta, seguro: te avisamos antes de que venzan" />
           <Row href="/objetivos" icon={Target} label="Objetivos" hint="Metas de ahorro con plazo y monto" />
+          <Row href="/importar" icon={Upload} label="Importar movimientos" hint="Resumen o CSV → gastos, sin cargar a mano" />
           <Row href="/perfil/presupuesto" icon={Tags} label="Mi presupuesto" hint="Ajustá los montos reales de cada categoría" />
           <Row href="/perfil/financiero" icon={SlidersHorizontal} label="Perfil financiero" hint="Ingreso, vivienda, estilo de vida" />
           <Row href="/perfil/notificaciones" icon={Bell} label="Notificaciones" hint="Avisos y recordatorios" />
           <Row href="/perfil/cuenta" icon={ShieldCheck} label="Tus datos" hint="Exportar o borrar tu cuenta" />
+          <Row href="/contacto" icon={LifeBuoy} label="Ayuda y contacto" hint="Dudas, reclamos y bajas" />
         </div>
 
         <PlanPreviewToggle />
