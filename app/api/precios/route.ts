@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { getPrices, pickTickers, REVALIDATE } from "@/lib/prices";
+import { getPrices, pickTickers } from "@/lib/prices";
 
 // Precios del mercado argentino y dólar, del lado del servidor (convención de
 // Fluir: nunca llamar APIs externas desde el cliente). Toda la app lee la misma
@@ -7,8 +7,6 @@ import { getPrices, pickTickers, REVALIDATE } from "@/lib/prices";
 //
 // `?tickers=AAPL,GGAL` recorta la respuesta a lo que la persona tiene. Sin eso
 // devolvíamos el mercado entero (cientos de especies) para valuar 5 tenencias.
-
-export const revalidate = REVALIDATE;
 
 export async function GET(request: NextRequest) {
   const raw = request.nextUrl.searchParams.get("tickers");
