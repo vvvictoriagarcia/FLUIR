@@ -146,3 +146,84 @@ export async function categorizeWithClaude(
     return {};
   }
 }
+
+// ── Cartera (Fluir Invertí): foto de la pantalla del broker ────────
+
+const HOLDINGS_SCHEMA = {
+  type: "object",
+  properties: {
+    tenencias: {
+      type: "array",
+      items: {
+        type: "object",
+        properties: {
+          ticker: { type: "string", description: "Símbolo/ticker tal como aparece (AAPL, GGAL, AL30)" },
+          nombre: { type: "string", description: "Nombre del activo si figura; si no, string vacío" },
+          cantidad: { type: "string", description: "Cantidad de nominales/unidades, tal cual aparece" },
+          precio_promedio: {
+            type: "string",
+            description:
+              "Precio promedio de compra (PPC) si figura; si no, el precio actual; si tampoco, string vacío",
+          },
+          tipo: {
+            type: "string",
+            enum: ["cedear", "accion", "bono", "fci", "plazo_fijo", "cripto", "otro"],
+            description: "Qué tipo de activo es, según lo que se ve en la pantalla",
+          },
+        },
+        required: ["ticker", "nombre", "cantidad", "precio_promedio", "tipo"],
+        additionalProperties: false,
+      },
+    },
+  },
+  required: ["tenencias"],
+  additionalProperties: false,
+} as const;
+
+export interface RawHolding {
+  ticker: string;
+  nombre: string;
+  cantidad: string;
+  precio_promedio: string;
+  tipo: string;
+}
+
+/** Lee las tenencias de una captura de pantalla del broker. */
+export async function extractHoldingsFromImage(
+  base64: string,
+  mediaType: string
+): Promise<RawHolding[]> {
+  const client = new Anthropic();
+  const res = await client.messages.create({
+    model: MODEL,
+    max_tokens: 4000,
+    output_config: { format: { type: "json_schema", schema: HOLDINGS_SCHEMA } },
+    messages: [
+      {
+        role: "user",
+        content: [
+          {
+            type: "image",
+            source: {
+              type: "base64",
+              media_type: normalizeMediaType(mediaType),
+              data: base64,
+            },
+          },
+          {
+            type: "text",
+            text: "Es la pantalla de tenencias de un broker argentino (Cocos, IOL, Balanz, PPI o similar). Extraé TODOS los activos que tiene la persona: ticker, nombre, cantidad y precio promedio de compra (PPC) si aparece. No inventes datos: si un valor no está en la imagen, devolvé string vacío. Los montos van tal cual aparecen, con sus separadores.",
+          },
+        ],
+      },
+    ],
+  });
+  const block = res.content.find((b) => b.type === "text");
+  if (!block || block.type !== "text") return [];
+  try {
+    const parsed = JSON.parse(block.text) as { tenencias?: RawHolding[] };
+    return parsed.tenencias ?? [];
+  } catch {
+    return [];
+  }
+}

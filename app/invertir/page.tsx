@@ -358,14 +358,17 @@ function PrimeraInversion() {
         ))}
       </div>
 
-      <div className="mt-5 flex items-start gap-2 rounded-card border border-border bg-muted/40 p-4">
+      <Link
+        href="/invertir/cartera"
+        className="mt-5 flex items-start gap-2 rounded-card border border-gold/40 bg-gold/10 p-4 transition-colors hover:bg-gold/15"
+      >
         <Camera size={18} className="mt-0.5 shrink-0 text-gold" />
         <p className="text-sm text-muted-foreground">
-          Cuando ya hayas invertido, vas a poder seguir cómo rinde tu plata
-          sacándole una foto a la pantalla de tu broker.{" "}
-          <span className="text-gold">Próximamente.</span>
+          <span className="font-medium text-foreground">Seguí tu cartera.</span>{" "}
+          Cargá lo que tenés (o sacale una foto a la pantalla de tu broker) y
+          mirá cuánto vale hoy y cuánto ganaste.
         </p>
-      </div>
+      </Link>
     </div>
   );
 }
