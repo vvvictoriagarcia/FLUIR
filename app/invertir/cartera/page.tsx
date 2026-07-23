@@ -53,6 +53,7 @@ function Cartera() {
   const [openNew, setOpenNew] = useState(false);
   const [leyendo, setLeyendo] = useState(false);
   const [toDelete, setToDelete] = useState<ValuedHolding | null>(null);
+  const [preview, setPreview] = useState<Omit<Holding, "id">[] | null>(null);
 
   const refresh = useCallback(async () => {
     const [list, p] = await Promise.all([loadHoldings(), fetchPrices()]);
@@ -119,14 +120,42 @@ function Cartera() {
         return;
       }
 
-      for (const t of leidas) await createHolding(t);
-      await refresh();
-      toast(`Cargamos ${leidas.length} ${leidas.length === 1 ? "activo" : "activos"}.`);
+      // No guardamos nada todavía: primero se revisa y se confirma.
+      setPreview(leidas);
       for (const w of json.warnings ?? []) toast(w);
     } catch {
       toast("Algo falló leyendo la imagen.", "error");
     } finally {
       setLeyendo(false);
+    }
+  }
+
+  /** Guarda lo confirmado del preview, contando qué entró y qué no. */
+  async function confirmarPreview(elegidas: Omit<Holding, "id">[]) {
+    let ok = 0;
+    let ultimoError = "";
+    for (const t of elegidas) {
+      try {
+        await createHolding(t);
+        ok++;
+      } catch (err) {
+        ultimoError = err instanceof Error ? err.message : "";
+      }
+    }
+    setPreview(null);
+    await refresh();
+
+    if (ok === elegidas.length) {
+      toast(`Listo, sumamos ${ok} ${ok === 1 ? "activo" : "activos"} a tu cartera.`);
+    } else if (ok > 0) {
+      toast(`Guardamos ${ok} de ${elegidas.length}. ${ultimoError}`.trim(), "error");
+    } else {
+      toast(
+        ultimoError
+          ? `No pudimos guardar: ${ultimoError}`
+          : "No pudimos guardar las tenencias.",
+        "error",
+      );
     }
   }
 
@@ -321,6 +350,14 @@ function Cartera() {
         />
       )}
 
+      {preview && (
+        <PreviewImportModal
+          items={preview}
+          onCancel={() => setPreview(null)}
+          onConfirm={confirmarPreview}
+        />
+      )}
+
       {toDelete && (
         <ConfirmDialog
           title={`¿Sacar ${toDelete.ticker} de tu cartera?`}
@@ -512,6 +549,138 @@ function NuevaTenenciaModal({
             className="flex-1 rounded-full bg-gold py-3 text-sm font-medium text-gold-foreground transition-opacity hover:opacity-90 disabled:opacity-60"
           >
             {saving ? "Guardando…" : "Agregar"}
+          </button>
+        </div>
+      </motion.div>
+    </div>
+  );
+}
+
+/**
+ * Revisión de lo que leyó la foto antes de guardar. Se puede sacar lo que no
+ * corresponda y corregir cantidades o precios, que es donde más se equivoca la
+ * lectura automática.
+ */
+function PreviewImportModal({
+  items,
+  onCancel,
+  onConfirm,
+}: {
+  items: Omit<Holding, "id">[];
+  onCancel: () => void;
+  onConfirm: (elegidas: Omit<Holding, "id">[]) => Promise<void>;
+}) {
+  const [filas, setFilas] = useState(
+    items.map((t) => ({ ...t, incluir: true })),
+  );
+  const [guardando, setGuardando] = useState(false);
+
+  const elegidas = filas.filter((f) => f.incluir);
+
+  function editar(i: number, campo: "quantity" | "avgPrice", valor: string) {
+    const n = Number(valor.replace(/[^\d.,]/g, "").replace(",", "."));
+    setFilas((prev) =>
+      prev.map((f, idx) => (idx === i ? { ...f, [campo]: n || 0 } : f)),
+    );
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 sm:items-center">
+      <motion.div
+        initial={{ opacity: 0, y: 40 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.25 }}
+        className="max-h-[92vh] w-full max-w-md overflow-y-auto rounded-t-3xl border border-border bg-card p-5 sm:rounded-3xl"
+      >
+        <h2 className="font-display text-xl font-semibold">
+          Encontramos {items.length} {items.length === 1 ? "activo" : "activos"}
+        </h2>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Revisá que esté bien antes de guardar. Destildá lo que no quieras.
+        </p>
+
+        <div className="mt-4 space-y-3">
+          {filas.map((f, i) => (
+            <div
+              key={`${f.ticker}-${i}`}
+              className={cn(
+                "rounded-xl border p-3 transition-opacity",
+                f.incluir ? "border-border" : "border-border opacity-50",
+              )}
+            >
+              <label className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={f.incluir}
+                  onChange={() =>
+                    setFilas((prev) =>
+                      prev.map((x, idx) =>
+                        idx === i ? { ...x, incluir: !x.incluir } : x,
+                      ),
+                    )
+                  }
+                  className="accent-[var(--gold)]"
+                />
+                <span className="font-medium">{f.ticker}</span>
+                <span className="truncate text-sm text-muted-foreground">
+                  {f.name}
+                </span>
+                <span className="ml-auto shrink-0 rounded-full bg-muted px-2 py-0.5 text-[11px] text-muted-foreground">
+                  {KIND_LABELS[f.kind]}
+                </span>
+              </label>
+
+              <div className="mt-2 grid grid-cols-2 gap-2">
+                <label className="block">
+                  <span className="text-xs text-muted-foreground">Cantidad</span>
+                  <input
+                    inputMode="decimal"
+                    defaultValue={f.quantity}
+                    onChange={(e) => editar(i, "quantity", e.target.value)}
+                    className="mt-0.5 w-full rounded-lg border border-border bg-background px-2 py-1.5 text-sm tabular-nums outline-none focus:border-gold"
+                  />
+                </label>
+                <label className="block">
+                  <span className="text-xs text-muted-foreground">
+                    Precio de compra
+                  </span>
+                  <input
+                    inputMode="decimal"
+                    defaultValue={f.avgPrice}
+                    onChange={(e) => editar(i, "avgPrice", e.target.value)}
+                    className="mt-0.5 w-full rounded-lg border border-border bg-background px-2 py-1.5 text-sm tabular-nums outline-none focus:border-gold"
+                  />
+                </label>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div className="mt-5 flex gap-2">
+          <button
+            onClick={onCancel}
+            className="flex-1 rounded-full border border-border py-3 text-sm font-medium transition-colors hover:bg-muted"
+          >
+            Cancelar
+          </button>
+          <button
+            onClick={async () => {
+              setGuardando(true);
+              await onConfirm(
+                elegidas.map((f) => ({
+                  ticker: f.ticker,
+                  name: f.name,
+                  kind: f.kind,
+                  quantity: f.quantity,
+                  avgPrice: f.avgPrice,
+                })),
+              );
+              setGuardando(false);
+            }}
+            disabled={guardando || elegidas.length === 0}
+            className="flex-1 rounded-full bg-gold py-3 text-sm font-medium text-gold-foreground transition-opacity hover:opacity-90 disabled:opacity-60"
+          >
+            {guardando ? "Guardando…" : `Agregar ${elegidas.length}`}
           </button>
         </div>
       </motion.div>

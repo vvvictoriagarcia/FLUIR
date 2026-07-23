@@ -8,6 +8,7 @@ import { Plus, ChevronRight } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { BottomNav } from "@/components/bottom-nav";
 import { UpcomingPayments } from "@/components/upcoming-payments";
+import { PortfolioCard } from "@/components/portfolio-card";
 import { touchLastSeen } from "@/lib/profile";
 import { BudgetDonut } from "@/components/budget-donut";
 import { ExpenseModal } from "@/components/expense-modal";
@@ -212,6 +213,9 @@ export default function DashboardPage() {
             </p>
           </div>
         )}
+
+        {/* Inversiones (solo Gold) */}
+        <PortfolioCard />
 
         {/* Pagos fijos: lo que se viene */}
         <UpcomingPayments />

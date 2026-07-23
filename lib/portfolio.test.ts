@@ -89,3 +89,30 @@ describe("aDolares", () => {
     expect(aDolares(150000, null)).toBe(0);
   });
 });
+
+describe("bonos: precio por lámina de 100 nominales", () => {
+  const bono: Holding = {
+    id: "b",
+    ticker: "AL30",
+    name: "Bonar 2030",
+    kind: "bono",
+    quantity: 500,
+    avgPrice: 78500,
+  };
+  const conBono: Prices = {
+    ...prices,
+    precios: { ...prices.precios, AL30: { price: 86200, pctChange: 0.4 } },
+  };
+
+  it("no infla la posición 100 veces", () => {
+    const [v] = valuate([bono], conBono);
+    expect(v.costo).toBe(392500); // 500 × 78.500 / 100
+    expect(v.valor).toBe(431000); // 500 × 86.200 / 100
+    expect(v.gananciaPct).toBeCloseTo(9.8, 1);
+  });
+
+  it("una acción sigue multiplicándose directo", () => {
+    const [v] = valuate([{ ...bono, kind: "accion", ticker: "GGAL", quantity: 150, avgPrice: 7120 }], prices);
+    expect(v.costo).toBe(1068000);
+  });
+});

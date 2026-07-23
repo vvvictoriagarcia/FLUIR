@@ -53,6 +53,23 @@ export interface PortfolioTotals {
   sinPrecio: number;
 }
 
+/**
+ * Cuántos nominales representa el precio publicado.
+ *
+ * En el mercado argentino los bonos cotizan "por lámina de 100 VN": si AL30
+ * figura a $86.200 y tenés 500 nominales, tu posición son $431.000, no
+ * $43.100.000. Sin esta división un solo bono se comía el 96% de la cartera.
+ */
+export const LAMINA: Record<HoldingKind, number> = {
+  cedear: 1,
+  accion: 1,
+  bono: 100,
+  fci: 1,
+  plazo_fijo: 1,
+  cripto: 1,
+  otro: 1,
+};
+
 export const KIND_LABELS: Record<HoldingKind, string> = {
   cedear: "CEDEAR",
   accion: "Acción",
@@ -166,8 +183,10 @@ export function valuate(holdings: Holding[], prices: Prices | null): ValuedHoldi
     const quote = prices?.precios[h.ticker.toUpperCase()];
     const sinPrecio = !quote?.price;
     const price = quote?.price ?? h.avgPrice;
-    const costo = h.quantity * h.avgPrice;
-    const valor = h.quantity * price;
+    // Los bonos cotizan por cada 100 nominales (ver LAMINA).
+    const lamina = LAMINA[h.kind] ?? 1;
+    const costo = (h.quantity * h.avgPrice) / lamina;
+    const valor = (h.quantity * price) / lamina;
     const ganancia = valor - costo;
     return {
       ...h,
