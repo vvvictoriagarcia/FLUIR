@@ -31,6 +31,7 @@ import {
   type ValuedHolding,
 } from "@/lib/portfolio";
 import { DISCLAIMER } from "@/lib/invest/content";
+import { ageLabel } from "@/lib/prices";
 import { formatARS, cn } from "@/lib/utils";
 
 export default function CarteraPage() {
@@ -63,17 +64,19 @@ function Cartera() {
   const [toDelete, setToDelete] = useState<ValuedHolding | null>(null);
   const [preview, setPreview] = useState<Omit<Holding, "id">[] | null>(null);
 
-  const refresh = useCallback(async () => {
-    const [list, p] = await Promise.all([loadHoldings(), fetchPrices()]);
+  const refresh = useCallback(async (force = false) => {
+    const list = await loadHoldings();
     setHoldings(list);
-    setPrices(p);
+    // Pedimos SOLO los tickers que tiene, no el mercado entero.
+    setPrices(await fetchPrices(list.map((h) => h.ticker), force));
   }, []);
 
   useEffect(() => {
     let activo = true;
     (async () => {
       try {
-        const [list, p] = await Promise.all([loadHoldings(), fetchPrices()]);
+        const list = await loadHoldings();
+        const p = await fetchPrices(list.map((h) => h.ticker));
         if (!activo) return;
         setHoldings(list);
         setPrices(p);
@@ -91,7 +94,7 @@ function Cartera() {
   async function actualizarPrecios() {
     setRefreshing(true);
     try {
-      setPrices(await fetchPrices());
+      await refresh(true);
     } finally {
       setRefreshing(false);
     }
@@ -182,6 +185,7 @@ function Cartera() {
 
   const valued = valuate(holdings, prices);
   const t = totals(valued);
+  const edad = ageLabel(prices?.asOf ?? null);
   const fmt = (ars: number) =>
     enDolares
       ? `US$ ${aDolares(ars, prices).toLocaleString("es-AR", { maximumFractionDigits: 0 })}`
@@ -246,7 +250,10 @@ function Cartera() {
               </p>
               <p className="mt-1 text-xs text-muted-foreground">
                 Pusiste {fmt(t.costo)}
-                {prices?.dolar.mep ? ` · dólar MEP $${prices.dolar.mep.toLocaleString("es-AR")}` : ""}
+                {prices?.dolar.mep
+                  ? ` · dólar MEP $${prices.dolar.mep.toLocaleString("es-AR")}`
+                  : ""}
+                {edad ? ` · precios ${edad}` : ""}
               </p>
 
               <button
@@ -261,9 +268,9 @@ function Cartera() {
 
             {(t.sinPrecio > 0 || prices?.parcial) && (
               <p className="mt-3 rounded-xl bg-muted px-3 py-2 text-xs text-muted-foreground">
-                {t.sinPrecio > 0
-                  ? `${t.sinPrecio} ${t.sinPrecio === 1 ? "activo no cotiza" : "activos no cotizan"} en el mercado local (plazo fijo, fondos, cripto): los mostramos al precio que pagaste.`
-                  : "Algunas cotizaciones no se pudieron traer. Probá actualizar en un rato."}
+                {prices?.parcial
+                  ? "No pudimos traer todas las cotizaciones, así que este total puede estar incompleto. Probá actualizar en un rato."
+                  : `${t.sinPrecio} ${t.sinPrecio === 1 ? "activo no cotiza" : "activos no cotizan"} en el mercado local (plazo fijo, fondos, cripto): los mostramos al precio que pagaste.`}
               </p>
             )}
 

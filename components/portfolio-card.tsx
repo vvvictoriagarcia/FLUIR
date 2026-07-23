@@ -15,6 +15,7 @@ import {
   type Prices,
 } from "@/lib/portfolio";
 import { formatARS, cn } from "@/lib/utils";
+import { ageLabel } from "@/lib/prices";
 
 // Paleta ámbar/oro: es el color del tier Gold, y así la cartera se distingue
 // de un vistazo del resto del dashboard (que es violeta).
@@ -34,7 +35,8 @@ export function PortfolioCard() {
     let activo = true;
     (async () => {
       try {
-        const [holdings, p] = await Promise.all([loadHoldings(), fetchPrices()]);
+        const holdings = await loadHoldings();
+        const p = await fetchPrices(holdings.map((h) => h.ticker));
         if (!activo) return;
         setPrices(p);
         setValued(valuate(holdings, p));
@@ -132,11 +134,16 @@ export function PortfolioCard() {
             {t.gananciaPct.toFixed(1)}%)
           </p>
           {prices?.dolar.mep ? (
-            <p className="mt-0.5 text-xs text-muted-foreground tabular-nums">
-              US$ {aDolares(t.valor, prices).toLocaleString("es-AR", {
-                maximumFractionDigits: 0,
-              })}{" "}
-              al MEP
+            <p className="mt-0.5 text-xs text-muted-foreground">
+              Equivale a{" "}
+              <span className="tabular-nums">
+                US${" "}
+                {aDolares(t.valor, prices).toLocaleString("es-AR", {
+                  maximumFractionDigits: 0,
+                })}
+              </span>{" "}
+              (dólar MEP ${prices.dolar.mep.toLocaleString("es-AR")})
+              {ageLabel(prices.asOf) ? ` · ${ageLabel(prices.asOf)}` : ""}
             </p>
           ) : null}
         </div>

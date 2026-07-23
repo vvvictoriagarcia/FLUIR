@@ -7,7 +7,7 @@ const prices: Prices = {
     AAPL: { price: 12000, pctChange: 1.5 },
     GGAL: { price: 8000, pctChange: -2 },
   },
-  updatedAt: "2026-07-23T00:00:00.000Z",
+  asOf: "2026-07-23T00:00:00.000Z",
   parcial: false,
 };
 

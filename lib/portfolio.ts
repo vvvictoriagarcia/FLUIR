@@ -5,6 +5,7 @@
 // ─────────────────────────────────────────────────────────────────
 
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
+import type { PricesSnapshot } from "@/lib/prices";
 
 export type HoldingKind =
   | "cedear"
@@ -25,12 +26,8 @@ export interface Holding {
   avgPrice: number;
 }
 
-export interface Prices {
-  dolar: { oficial: number; blue: number; mep: number; ccl: number };
-  precios: Record<string, { price: number; pctChange: number }>;
-  updatedAt: string;
-  parcial: boolean;
-}
+/** La foto de precios tal como la devuelve /api/precios (ver lib/prices.ts). */
+export type Prices = PricesSnapshot;
 
 export interface ValuedHolding extends Holding {
   /** Precio actual en pesos (o el de compra si no lo encontramos). */
@@ -164,15 +161,45 @@ export async function deleteHolding(id: string): Promise<void> {
   if (error) throw new Error(error.message);
 }
 
-/** Trae precios de mercado por nuestra API (nunca desde el cliente a la fuente). */
-export async function fetchPrices(): Promise<Prices | null> {
-  try {
-    const res = await fetch("/api/precios");
-    if (!res.ok) return null;
-    return (await res.json()) as Prices;
-  } catch {
-    return null;
+// Una sola foto de precios por vista: si el dashboard y la cartera piden a la
+// vez (o se navega entre ellas), comparten el mismo pedido en lugar de mostrar
+// dos valuaciones distintas del mismo patrimonio.
+let enVuelo: Promise<Prices | null> | null = null;
+let ultima: { snap: Prices | null; tomadaEn: number } | null = null;
+const VIGENCIA_MS = 60_000;
+
+/**
+ * Trae precios por nuestra API (nunca desde el cliente a la fuente).
+ * @param tickers  solo estos símbolos, para no bajar el mercado entero.
+ * @param force    ignora lo que haya en memoria (botón "actualizar precios").
+ */
+export async function fetchPrices(
+  tickers?: string[],
+  force = false,
+): Promise<Prices | null> {
+  if (!force && ultima && Date.now() - ultima.tomadaEn < VIGENCIA_MS) {
+    return ultima.snap;
   }
+  if (!force && enVuelo) return enVuelo;
+
+  const qs = tickers?.length
+    ? `?tickers=${encodeURIComponent(tickers.join(","))}`
+    : "";
+
+  enVuelo = (async () => {
+    try {
+      const res = await fetch(`/api/precios${qs}`);
+      if (!res.ok) return null;
+      return (await res.json()) as Prices;
+    } catch {
+      return null;
+    }
+  })();
+
+  const snap = await enVuelo;
+  enVuelo = null;
+  ultima = { snap, tomadaEn: Date.now() };
+  return snap;
 }
 
 // ── Cálculo ────────────────────────────────────────────────────────
