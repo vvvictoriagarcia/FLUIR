@@ -205,6 +205,8 @@ export default function OnboardingPage() {
                         whileHover={{ scale: 1.01 }}
                         whileTap={{ scale: 0.99 }}
                         onClick={() => answerChoice(choice.id, option.value)}
+                        aria-label={`${option.label}: ${option.desc}`}
+                        aria-pressed={selected}
                         className={`flex w-full items-center justify-between rounded-2xl border-2 p-4 text-left transition-colors ${
                           selected
                             ? "border-brand bg-brand/10"

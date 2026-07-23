@@ -12,11 +12,17 @@ const OPTIONS: { value: Plan; label: string }[] = [
 ];
 
 /**
- * Toggle de PRUEBA para previsualizar los tiers pagos sin pagar.
- * Escribe un override en localStorage que `usePlan` respeta. Temporal:
- * se quita cuando Mercado Pago setee el plan real en `profiles.plan`.
+ * Toggle de PRUEBA para previsualizar los tiers pagos sin pagar (solo en
+ * desarrollo). En producción no se muestra y el override tampoco se lee:
+ * si no, cualquiera se daba Gold gratis con un toque. Para probar los planes
+ * pagos en el sitio real, cambiá `plan` en la tabla `profiles` de Supabase.
  */
 export function PlanPreviewToggle() {
+  if (process.env.NODE_ENV === "production") return null;
+  return <PreviewToggle />;
+}
+
+function PreviewToggle() {
   const [active, setActive] = useState<Plan | null>(null);
 
   useEffect(() => {

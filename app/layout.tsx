@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Fraunces, Inter } from "next/font/google";
 import "./globals.css";
 import { ToastProvider } from "@/components/toast";
+import { siteUrl } from "@/lib/utils";
 
 // Display / títulos — serif variable, editorial, con carácter
 const fraunces = Fraunces({
@@ -17,7 +18,7 @@ const inter = Inter({
   display: "swap",
 });
 
-const SITE_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://fluirargentina.com";
+const SITE_URL = siteUrl();
 const TITLE = "Fluir — Tu plata, en orden";
 const DESCRIPTION =
   "Tu presupuesto personal en 3 minutos. Sin Excel, sin fórmulas. Solo respondé 6 preguntas y Fluir hace el resto.";

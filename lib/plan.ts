@@ -24,8 +24,13 @@ export const PLAN_LABELS: Record<Plan, string> = {
 
 const PREVIEW_KEY = "fluir_plan_preview";
 
-/** Lee el override de previsualización de plan (o null si no hay). */
+/**
+ * Lee el override de previsualización de plan (o null si no hay).
+ * En producción SIEMPRE devuelve null: el override es una herramienta de
+ * desarrollo y dejarlo vivo regalaría las features pagas.
+ */
 export function getPlanPreview(): Plan | null {
+  if (process.env.NODE_ENV === "production") return null;
   if (typeof window === "undefined") return null;
   const v = localStorage.getItem(PREVIEW_KEY);
   return v === "free" || v === "plus" || v === "gold" ? v : null;

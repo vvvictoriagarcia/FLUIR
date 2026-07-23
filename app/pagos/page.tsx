@@ -114,6 +114,15 @@ export default function PagosPage() {
                 El alquiler, la tarjeta, el seguro, el gimnasio. Los que caen
                 siempre el mismo día.
               </p>
+              <p className="mx-auto mt-4 max-w-sm text-xs leading-relaxed text-muted-foreground">
+                Ojo: que una categoría figure como &ldquo;fija&rdquo; en{" "}
+                <Link href="/perfil/presupuesto" className="font-medium text-brand">
+                  Mi presupuesto
+                </Link>{" "}
+                significa que ya la descontamos de tu ingreso. Acá cargás{" "}
+                <strong>cuándo</strong> vence cada pago, para que te avisemos
+                antes. Son dos cosas distintas.
+              </p>
             </div>
           ) : (
             items.map((p, i) => (

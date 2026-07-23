@@ -1,6 +1,8 @@
 import type { MetadataRoute } from "next";
 
-const SITE_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://fluirargentina.com";
+import { siteUrl } from "@/lib/utils";
+
+const SITE_URL = siteUrl();
 
 /** Páginas públicas que sí queremos que Google indexe. */
 const ROUTES: { path: string; priority: number }[] = [
