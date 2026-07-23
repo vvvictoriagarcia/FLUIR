@@ -84,9 +84,9 @@ export function track(name: EventName, props: EventProps = {}): void {
   void (async () => {
     try {
       const supabase = createClient();
-      const { data } = await supabase.auth.getUser();
+      const { data } = await supabase.auth.getSession();
       await supabase.from("events").insert({
-        user_id: data.user?.id ?? null,
+        user_id: data.session?.user.id ?? null,
         session_id: sessionId(),
         name,
         path: window.location.pathname,

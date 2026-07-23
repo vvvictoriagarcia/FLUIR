@@ -37,10 +37,18 @@ function writeLocal(prefs: EmailPrefs) {
   } catch {}
 }
 
+/**
+ * Id del usuario logueado, o null en modo demo.
+ *
+ * Usa `getSession()` (lee el storage local) y no `getUser()`, que pega a la red
+ * en cada llamada: con cinco módulos preguntando por la sesión, eran 8 requests
+ * a /auth/v1/user por carga. La seguridad no depende de esto — los datos los
+ * protege RLS del lado del servidor.
+ */
 async function getUserId(): Promise<string | null> {
   if (!isSupabaseConfigured) return null;
-  const { data } = await createClient().auth.getUser();
-  return data.user?.id ?? null;
+  const { data } = await createClient().auth.getSession();
+  return data.session?.user.id ?? null;
 }
 
 /** Preferencias de mail: de Supabase si hay sesión, si no del navegador. */
@@ -74,16 +82,40 @@ export async function saveEmailPrefs(prefs: EmailPrefs): Promise<boolean> {
   return !error;
 }
 
+const LAST_SEEN_KEY = "fluir_last_seen_ping";
+/** Cada cuánto tiene sentido volver a escribir la última visita. */
+const LAST_SEEN_MS = 12 * 60 * 60 * 1000;
+
 /**
- * Deja registrado que la persona entró hoy. Es lo que después permite mandar
+ * Deja registrado que la persona entró. Es lo que después permite mandar
  * "hace 12 días que no cargás nada" sin molestar a quien sí está usando la app.
+ *
+ * Con throttle de 12 h: para segmentar por inactividad alcanza y sobra saber el
+ * día, y escribir en la base en cada carga de pantalla es costo y riesgo de
+ * carrera sin ningún beneficio.
  * Best-effort: si falla, no pasa nada.
  */
 export async function touchLastSeen(): Promise<void> {
+  if (typeof window !== "undefined") {
+    try {
+      const ultimo = Number(localStorage.getItem(LAST_SEEN_KEY) ?? 0);
+      if (Date.now() - ultimo < LAST_SEEN_MS) return;
+    } catch {
+      // Sin localStorage escribimos igual: es mejor que perder el dato.
+    }
+  }
+
   const uid = await getUserId();
   if (!uid) return;
-  await createClient()
+
+  const { error } = await createClient()
     .from("profiles")
     .update({ last_seen_at: new Date().toISOString() })
     .eq("id", uid);
+
+  if (!error && typeof window !== "undefined") {
+    try {
+      localStorage.setItem(LAST_SEEN_KEY, String(Date.now()));
+    } catch {}
+  }
 }

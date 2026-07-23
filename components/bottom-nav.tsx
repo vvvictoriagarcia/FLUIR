@@ -60,7 +60,12 @@ export function BottomNav() {
           );
 
           return item.href ? (
-            <Link key={item.label} href={item.href} className={className}>
+            <Link
+              key={item.label}
+              href={item.href}
+              prefetch={false}
+              className={className}
+            >
               {inner}
             </Link>
           ) : (

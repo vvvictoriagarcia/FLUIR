@@ -80,10 +80,18 @@ export const KIND_LABELS: Record<HoldingKind, string> = {
 const LOCAL_KEY = "fluir_holdings";
 const COLS = "id, ticker, name, kind, quantity, avg_price";
 
+/**
+ * Id del usuario logueado, o null en modo demo.
+ *
+ * Usa `getSession()` (lee el storage local) y no `getUser()`, que pega a la red
+ * en cada llamada: con cinco módulos preguntando por la sesión, eran 8 requests
+ * a /auth/v1/user por carga. La seguridad no depende de esto — los datos los
+ * protege RLS del lado del servidor.
+ */
 async function getUserId(): Promise<string | null> {
   if (!isSupabaseConfigured) return null;
-  const { data } = await createClient().auth.getUser();
-  return data.user?.id ?? null;
+  const { data } = await createClient().auth.getSession();
+  return data.session?.user.id ?? null;
 }
 
 function readLocal(): Holding[] {

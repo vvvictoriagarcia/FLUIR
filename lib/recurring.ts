@@ -35,10 +35,18 @@ const LOCAL_PAID_KEY = "fluir_recurring_paid"; // { "<id>": "YYYY-MM" }
 
 const COLS = "id, name, category, amount, due_day, remind_days, is_active";
 
+/**
+ * Id del usuario logueado, o null en modo demo.
+ *
+ * Usa `getSession()` (lee el storage local) y no `getUser()`, que pega a la red
+ * en cada llamada: con cinco módulos preguntando por la sesión, eran 8 requests
+ * a /auth/v1/user por carga. La seguridad no depende de esto — los datos los
+ * protege RLS del lado del servidor.
+ */
 async function getUserId(): Promise<string | null> {
   if (!isSupabaseConfigured) return null;
-  const { data } = await createClient().auth.getUser();
-  return data.user?.id ?? null;
+  const { data } = await createClient().auth.getSession();
+  return data.session?.user.id ?? null;
 }
 
 export function currentMonthKey(d = new Date()): string {
