@@ -3,7 +3,7 @@ import Link from "next/link";
 import { LegalShell, LegalSection } from "@/components/legal-shell";
 
 export const metadata: Metadata = {
-  title: "Términos y Condiciones · Fluir",
+  title: "Términos y Condiciones",
 };
 
 export default function TerminosPage() {

@@ -15,6 +15,7 @@ import {
   Upload,
   LifeBuoy,
   CalendarClock,
+  CreditCard,
 } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { BottomNav } from "@/components/bottom-nav";
@@ -109,6 +110,16 @@ export default function PerfilPage() {
           <Row href="/perfil/presupuesto" icon={Tags} label="Mi presupuesto" hint="Ajustá los montos reales de cada categoría" />
           <Row href="/perfil/financiero" icon={SlidersHorizontal} label="Perfil financiero" hint="Ingreso, vivienda, estilo de vida" />
           <Row href="/perfil/notificaciones" icon={Bell} label="Notificaciones" hint="Avisos y recordatorios" />
+          <Row
+            href="/planes"
+            icon={CreditCard}
+            label="Tu suscripción"
+            hint={
+              plan === "free"
+                ? "Ver los planes y qué incluye cada uno"
+                : "Cambiar de plan o darte de baja"
+            }
+          />
           <Row href="/perfil/cuenta" icon={ShieldCheck} label="Tus datos" hint="Exportar o borrar tu cuenta" />
           <Row href="/contacto" icon={LifeBuoy} label="Ayuda y contacto" hint="Dudas, reclamos y bajas" />
         </div>

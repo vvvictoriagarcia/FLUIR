@@ -6,7 +6,7 @@ import { motion } from "framer-motion";
 import { CheckCircle2, RotateCw, Mail } from "lucide-react";
 import { usePlan } from "@/hooks/usePlan";
 import { PLAN_LABELS } from "@/lib/plan";
-import { SUPPORT_EMAIL, mailto } from "@/lib/contact";
+import { whatsapp } from "@/lib/contact";
 
 /**
  * Pantalla a la que vuelve la persona después de pagar en Mercado Pago.
@@ -71,10 +71,12 @@ export default function GraciasPage() {
             <Mail size={14} />
             ¿Pasaron unos minutos y sigue igual?{" "}
             <a
-              href={mailto("Pagué y no se activó mi plan")}
+              href={whatsapp("Hola, pagué mi plan de Fluir y todavía no se activó.")}
+              target="_blank"
+              rel="noopener noreferrer"
               className="font-medium text-brand"
             >
-              {SUPPORT_EMAIL}
+              escribinos por WhatsApp
             </a>
           </p>
         )}

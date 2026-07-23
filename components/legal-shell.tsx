@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
-import { SUPPORT_EMAIL } from "@/lib/contact";
+import { mailto } from "@/lib/contact";
 
 /** Contenedor común para las páginas legales (términos, privacidad, contacto). */
 export function LegalShell({
@@ -51,9 +51,9 @@ export function LegalShell({
         </div>
 
         <p className="mt-12 border-t border-border pt-6 text-sm text-muted-foreground">
-          ¿Dudas? Escribinos a{" "}
-          <a href={`mailto:${SUPPORT_EMAIL}`} className="font-medium text-brand">
-            {SUPPORT_EMAIL}
+          ¿Dudas?{" "}
+          <a href={mailto("Consulta desde Fluir")} className="font-medium text-brand">
+            Escribinos
           </a>
           {showContactLink && (
             <>

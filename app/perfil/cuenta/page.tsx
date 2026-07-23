@@ -10,7 +10,6 @@ import { ConfirmDialog } from "@/components/confirm-dialog";
 import { useToast } from "@/components/toast";
 import { useUser } from "@/hooks/useUser";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
-import { SUPPORT_EMAIL } from "@/lib/contact";
 
 export default function CuentaPage() {
   const router = useRouter();
@@ -96,7 +95,7 @@ export default function CuentaPage() {
       router.push("/");
     } catch {
       setDeleting(false);
-      toast(`No pudimos borrar tu cuenta. Escribinos a ${SUPPORT_EMAIL}`, "error");
+      toast("No pudimos borrar tu cuenta. Escribinos desde Ayuda y contacto.", "error");
     }
   }
 

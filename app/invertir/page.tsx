@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import {
@@ -13,6 +14,8 @@ import {
 } from "lucide-react";
 import { BottomNav } from "@/components/bottom-nav";
 import { PlanGate } from "@/components/gates/plan-gate";
+import { guiaVista, marcarGuiaVista } from "@/lib/invest/state";
+import { loadHoldings } from "@/lib/portfolio";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Jerga } from "@/components/invest/jerga";
 import { loadDashboard } from "@/lib/data";
@@ -52,19 +55,43 @@ export default function InvertirPage() {
 }
 
 function Journey() {
+  const router = useRouter();
   const [step, setStep] = useState(0);
+  const [decidiendo, setDecidiendo] = useState(true);
   const [sobra, setSobra] = useState<number | null>(null);
   const [colchon, setColchon] = useState<boolean | null>(null);
   const [deudas, setDeudas] = useState<boolean | null>(null);
 
   useEffect(() => {
-    loadDashboard().then(({ budget }) => {
-      if (budget) setSobra(Math.max(0, budget.result.total_savings));
-    });
-  }, []);
+    let activo = true;
+    (async () => {
+      // Si ya leyó la guía o ya cargó inversiones, no la hacemos pasar de nuevo:
+      // Gold la lleva derecho a su cartera. Se puede volver con "Ver la guía".
+      const forzada = new URLSearchParams(window.location.search).has("guia");
+      if (!forzada) {
+        const yaVio = guiaVista();
+        const tiene = yaVio ? [] : await loadHoldings().catch(() => []);
+        if (yaVio || tiene.length > 0) {
+          router.replace("/invertir/cartera");
+          return;
+        }
+      }
+      if (!activo) return;
+      setDecidiendo(false);
+      const { budget } = await loadDashboard();
+      if (activo && budget) setSobra(Math.max(0, budget.result.total_savings));
+    })();
+    return () => {
+      activo = false;
+    };
+  }, [router]);
 
   const ready = colchon === true && deudas === false;
   const TOTAL = 5;
+
+  if (decidiendo) {
+    return <div className="h-64 animate-pulse rounded-card bg-muted" />;
+  }
 
   return (
     <div>
@@ -132,12 +159,15 @@ function Journey() {
             <ArrowRight size={16} />
           </button>
         ) : (
-          <Link
-            href="/dashboard"
+          <button
+            onClick={() => {
+              marcarGuiaVista();
+              router.push("/invertir/cartera");
+            }}
             className="rounded-full bg-gold px-6 py-3 text-sm font-medium text-gold-foreground"
           >
             Terminar
-          </Link>
+          </button>
         )}
       </div>
 

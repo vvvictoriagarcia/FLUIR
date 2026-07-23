@@ -5,7 +5,7 @@ import { motion } from "framer-motion";
 import { ArrowRight, Sparkles, Target, TrendingUp, Zap } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { useUser } from "@/hooks/useUser";
-import { SUPPORT_EMAIL } from "@/lib/contact";
+import { WHATSAPP_DISPLAY, whatsapp } from "@/lib/contact";
 
 const CHECKS = [
   "Sin tarjeta",
@@ -189,10 +189,12 @@ export default function Landing() {
           </Link>
         </div>
         <a
-          href={`mailto:${SUPPORT_EMAIL}`}
+          href={whatsapp()}
+          target="_blank"
+          rel="noopener noreferrer"
           className="mt-3 inline-block transition-colors hover:text-foreground"
         >
-          {SUPPORT_EMAIL}
+          WhatsApp {WHATSAPP_DISPLAY}
         </a>
         <p className="mt-2">Fluir · Hecho en Argentina 🇦🇷</p>
       </footer>

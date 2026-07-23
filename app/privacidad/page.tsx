@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { LegalShell, LegalSection } from "@/components/legal-shell";
-import { SUPPORT_EMAIL } from "@/lib/contact";
+import { mailto } from "@/lib/contact";
 
 export const metadata: Metadata = {
-  title: "Política de Privacidad · Fluir",
+  title: "Política de Privacidad",
 };
 
 export default function PrivacidadPage() {
@@ -19,11 +19,18 @@ export default function PrivacidadPage() {
 
       <LegalSection n={1} title="Quién es responsable de tus datos">
         <p>
-          El responsable del tratamiento es Fluir. Podés contactarnos por
-          cualquier tema de privacidad en{" "}
-          <a href={`mailto:${SUPPORT_EMAIL}`} className="font-medium text-brand">
-            {SUPPORT_EMAIL}
-          </a>
+          El responsable del tratamiento es Fluir. Por cualquier tema de
+          privacidad podés{" "}
+          <a
+            href={mailto("Consulta de privacidad")}
+            className="font-medium text-brand"
+          >
+            escribirnos por mail
+          </a>{" "}
+          o usar los canales de{" "}
+          <Link href="/contacto" className="font-medium text-brand">
+            Ayuda y contacto
+          </Link>
           .
         </p>
       </LegalSection>
@@ -82,7 +89,13 @@ export default function PrivacidadPage() {
             para procesar el cobro.
           </li>
           <li>
-            <strong>Vercel</strong> — hosting de la aplicación.
+            <strong>Netlify</strong> — hosting de la aplicación.
+          </li>
+          <li>
+            <strong>Anthropic (Claude)</strong> — solo si usás la lectura
+            automática de resúmenes o de la pantalla de tu broker: la imagen o
+            el archivo se procesan en el momento para extraer los datos y no se
+            guardan.
           </li>
         </ul>
         <p>

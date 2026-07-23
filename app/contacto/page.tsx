@@ -1,17 +1,18 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Mail, AtSign, ShieldCheck, Clock } from "lucide-react";
+import { Mail, AtSign, ShieldCheck, Clock, MessageCircle } from "lucide-react";
 import { LegalShell, LegalSection } from "@/components/legal-shell";
 import {
-  SUPPORT_EMAIL,
   RESPONSE_TIME,
   INSTAGRAM_URL,
   INSTAGRAM_HANDLE,
+  WHATSAPP_DISPLAY,
   mailto,
+  whatsapp,
 } from "@/lib/contact";
 
 export const metadata: Metadata = {
-  title: "Ayuda y contacto · Fluir",
+  title: "Ayuda y contacto",
   description:
     "Escribinos por dudas, reclamos o bajas. Respondemos dentro de las 72 horas hábiles.",
 };
@@ -101,7 +102,7 @@ const FAQ: { q: string; a: React.ReactNode }[] = [
       <>
         Escribinos a{" "}
         <a href={mailto("Reporte de un problema")} className="font-medium text-brand">
-          {SUPPORT_EMAIL}
+          escribinos
         </a>{" "}
         contándonos qué pasó y desde qué dispositivo. Si podés, mandá una
         captura: nos ahorra medio día de adivinanzas.
@@ -119,17 +120,32 @@ export default function ContactoPage() {
     >
       {/* Contacto principal */}
       <div className="rounded-card border border-border bg-card p-5">
-        <div className="flex items-center gap-2 text-brand">
-          <Mail size={18} />
-          <span className="text-sm font-medium">Escribinos</span>
+        <p className="font-medium">¿Necesitás una mano?</p>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Escribinos por donde te quede más cómodo. Contestamos todos los
+          mensajes.
+        </p>
+
+        <div className="mt-4 flex flex-col gap-2 sm:flex-row">
+          <a
+            href={whatsapp()}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex flex-1 items-center justify-center gap-2 rounded-full bg-brand py-3 text-sm font-medium text-brand-foreground transition-opacity hover:opacity-90"
+          >
+            <MessageCircle size={16} />
+            WhatsApp {WHATSAPP_DISPLAY}
+          </a>
+          <a
+            href={mailto("Consulta desde Fluir")}
+            className="flex flex-1 items-center justify-center gap-2 rounded-full border border-border py-3 text-sm font-medium transition-colors hover:bg-muted"
+          >
+            <Mail size={16} />
+            Escribinos por mail
+          </a>
         </div>
-        <a
-          href={mailto("Consulta desde Fluir")}
-          className="mt-2 block break-all font-display text-2xl font-semibold tracking-tight text-foreground transition-colors hover:text-brand"
-        >
-          {SUPPORT_EMAIL}
-        </a>
-        <p className="mt-2 flex items-center gap-1.5 text-sm text-muted-foreground">
+
+        <p className="mt-3 flex items-center gap-1.5 text-sm text-muted-foreground">
           <Clock size={14} />
           Respondemos dentro de las {RESPONSE_TIME}.
         </p>
@@ -150,11 +166,19 @@ export default function ContactoPage() {
       <LegalSection n={1} title="Reclamos">
         <p>
           Si algo salió mal —un cobro que no reconocés, un dato que no podés
-          corregir, un problema con el servicio— escribinos a{" "}
+          corregir, un problema con el servicio—{" "}
           <a href={mailto("Reclamo")} className="font-medium text-brand">
-            {SUPPORT_EMAIL}
+            escribinos por mail
           </a>{" "}
-          con el asunto <strong>&ldquo;Reclamo&rdquo;</strong>. Te confirmamos
+          con el asunto <strong>&ldquo;Reclamo&rdquo;</strong>, o mandanos un{" "}
+          <a
+            href={whatsapp("Hola, quiero hacer un reclamo por Fluir.")}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="font-medium text-brand"
+          >
+            WhatsApp
+          </a>. Te confirmamos
           la recepción y te damos una respuesta concreta dentro de las{" "}
           {RESPONSE_TIME}.
         </p>
@@ -181,7 +205,7 @@ export default function ContactoPage() {
           <strong>Cancelar un plan pago:</strong> escribinos con el asunto{" "}
           <strong>&ldquo;Baja&rdquo;</strong> a{" "}
           <a href={mailto("Baja")} className="font-medium text-brand">
-            {SUPPORT_EMAIL}
+            escribinos
           </a>{" "}
           y lo damos de baja. No hay permanencia mínima: el acceso pago sigue
           hasta el fin del período ya abonado y no se renueva.
@@ -193,7 +217,7 @@ export default function ContactoPage() {
           del Consumidor. Mandá un mail con el asunto{" "}
           <strong>&ldquo;Arrepentimiento&rdquo;</strong> a{" "}
           <a href={mailto("Arrepentimiento")} className="font-medium text-brand">
-            {SUPPORT_EMAIL}
+            escribinos
           </a>{" "}
           desde el mail de tu cuenta.
         </p>

@@ -3,7 +3,15 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { ArrowLeft, Plus, Camera, Trash2, RotateCw, TrendingUp } from "lucide-react";
+import {
+  ArrowLeft,
+  Plus,
+  Camera,
+  Trash2,
+  RotateCw,
+  TrendingUp,
+  HelpCircle,
+} from "lucide-react";
 import { BottomNav } from "@/components/bottom-nav";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { PlanGate } from "@/components/gates/plan-gate";
@@ -184,11 +192,20 @@ function Cartera() {
       <div className="mx-auto max-w-xl px-5 py-6">
         <div className="mb-6 flex items-center justify-between">
           <Link
-            href="/invertir"
+            href="/dashboard"
             className="flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
           >
             <ArrowLeft size={16} />
-            Volver
+            Inicio
+          </Link>
+          <div className="flex items-center gap-2">
+          <Link
+            href="/invertir?guia=1"
+            title="Volver a ver la guía para invertir"
+            className="flex items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-xs font-medium transition-colors hover:bg-muted"
+          >
+            <HelpCircle size={14} />
+            Guía
           </Link>
           <button
             onClick={() => setEnDolares((v) => !v)}
@@ -196,6 +213,7 @@ function Cartera() {
           >
             Ver en {enDolares ? "pesos" : "dólares"}
           </button>
+          </div>
         </div>
 
         <h1 className="font-display text-3xl font-semibold">Tu cartera</h1>
