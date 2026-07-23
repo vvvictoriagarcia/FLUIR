@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 
 const OPTIONS: { value: Plan; label: string }[] = [
   { value: "free", label: "Free" },
-  { value: "plus", label: "Plus" },
+  { value: "plus", label: "Pro" },
   { value: "gold", label: "Gold" },
 ];
 

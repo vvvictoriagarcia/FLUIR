@@ -1,13 +1,24 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { ArrowLeft, Check } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { useToast } from "@/components/toast";
+import { useUser } from "@/hooks/useUser";
+import { usePlan } from "@/hooks/usePlan";
+import { ConfirmDialog } from "@/components/confirm-dialog";
+import { PLAN_LABELS } from "@/lib/plan";
+import { checkoutUrl } from "@/lib/mercadopago/links";
 import { cn } from "@/lib/utils";
+
+type PlanId = "free" | "plus" | "gold";
 
 const PLANS = [
   {
+    id: "free" as PlanId,
     name: "Free",
     price: "$0",
     anchor: "Tu plan actual",
@@ -16,14 +27,15 @@ const PLANS = [
     features: [
       "Presupuesto mensual personalizado",
       "Tracking de gastos diario",
-      "Montos ajustables por categoría",
+      "Importar movimientos (foto o CSV)",
     ],
     cta: "Tu plan actual",
   },
   {
-    name: "Plus",
+    id: "plus" as PlanId,
+    name: "Pro",
     price: "$4.000/mes",
-    anchor: "= 1 café por mes",
+    anchor: "Cancelás cuando quieras",
     badge: "Más popular",
     accent: "brand",
     features: [
@@ -32,34 +44,71 @@ const PLANS = [
       "Comparativa de meses",
       "Insights automáticos",
     ],
-    cta: "Próximamente",
-    soon: true,
+    cta: "Suscribirme",
   },
   {
+    id: "gold" as PlanId,
     name: "Gold",
     price: "$9.000/mes",
-    anchor: "= 2 cafés por mes",
+    anchor: "Cancelás cuando quieras",
     badge: "Para los que invierten",
     accent: "gold",
     features: [
-      "Todo lo de Plus",
-      "Tracker de portafolio",
-      "P&L y TIR en tiempo real",
-      "Benchmark vs mercado",
-      "Guía para empezar a invertir",
+      "Todo lo de Pro",
+      "Fluir Invertí: guía paso a paso",
+      "Seguimiento de tu cartera",
+      "Insights de tus inversiones",
     ],
-    cta: "Próximamente",
-    soon: true,
+    cta: "Suscribirme",
   },
 ];
 
-function inactive(plan: (typeof PLANS)[number]): boolean {
-  return (
-    !!("current" in plan && plan.current) || !!("soon" in plan && plan.soon)
-  );
+function inactive(plan: (typeof PLANS)[number], current: PlanId): boolean {
+  return plan.id === current;
 }
 
 export default function PlanesPage() {
+  const toast = useToast();
+  const router = useRouter();
+  const { user } = useUser();
+  const { plan: current } = usePlan();
+  const [loading, setLoading] = useState<PlanId | null>(null);
+  const [confirmCancel, setConfirmCancel] = useState(false);
+  const [cancelling, setCancelling] = useState(false);
+
+  function subscribe(plan: PlanId) {
+    if (plan === "free") return;
+
+    // Sin cuenta no podemos activarle el plan a nadie: primero que se registre.
+    if (!user) {
+      toast("Creá tu cuenta primero así te activamos el plan.");
+      router.push(`/register?next=/planes`);
+      return;
+    }
+
+    setLoading(plan);
+    window.location.assign(checkoutUrl(plan, user.id));
+  }
+
+  async function cancelar() {
+    setCancelling(true);
+    try {
+      const res = await fetch("/api/mp/cancel", { method: "POST" });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        toast(json.error ?? "No pudimos dar de baja la suscripción.", "error");
+        return;
+      }
+      toast("Listo, cancelamos tu suscripción. Seguís con Free.");
+      setTimeout(() => window.location.reload(), 800);
+    } catch {
+      toast("Algo falló. Probá de nuevo.", "error");
+    } finally {
+      setCancelling(false);
+      setConfirmCancel(false);
+    }
+  }
+
   return (
     <div className="min-h-screen px-5 py-6">
       <div className="mx-auto max-w-xl">
@@ -131,26 +180,66 @@ export default function PlanesPage() {
               </ul>
 
               <button
-                disabled={inactive(plan)}
+                disabled={inactive(plan, current) || loading === plan.id}
+                onClick={() => subscribe(plan.id)}
                 className={cn(
                   "mt-5 w-full rounded-full py-3 text-sm font-medium transition-opacity",
-                  inactive(plan)
+                  inactive(plan, current)
                     ? "cursor-default border border-border text-muted-foreground"
                     : plan.accent === "brand"
-                      ? "bg-brand text-brand-foreground hover:opacity-90"
+                      ? "bg-brand text-brand-foreground hover:opacity-90 disabled:opacity-60"
                       : plan.accent === "gold"
-                        ? "bg-gold text-gold-foreground hover:opacity-90"
+                        ? "bg-gold text-gold-foreground hover:opacity-90 disabled:opacity-60"
                         : ""
                 )}
               >
-                {plan.cta}
+                {loading === plan.id
+                  ? "Abriendo…"
+                  : inactive(plan, current)
+                    ? "Tu plan actual"
+                    : plan.cta}
               </button>
             </motion.div>
           ))}
         </div>
 
-        <p className="mt-6 text-center text-xs text-muted-foreground">
-          Los pagos se activan próximamente con Mercado Pago.
+        {current !== "free" && (
+          <div className="mt-6 rounded-card border border-border bg-card p-4">
+            <p className="text-sm font-medium">
+              Tenés el plan {PLAN_LABELS[current]}
+            </p>
+            <p className="mt-0.5 text-sm text-muted-foreground">
+              Si cambiás de plan, damos de baja el anterior para que no te
+              cobren los dos.
+            </p>
+            <button
+              onClick={() => setConfirmCancel(true)}
+              disabled={cancelling}
+              className="mt-3 text-sm font-medium text-negative disabled:opacity-60"
+            >
+              {cancelling ? "Cancelando…" : "Cancelar mi suscripción"}
+            </button>
+          </div>
+        )}
+
+        {confirmCancel && (
+          <ConfirmDialog
+            title="¿Cancelar tu suscripción?"
+            message="Se corta el débito automático y volvés al plan Free. Tus datos quedan intactos."
+            confirmLabel="Sí, cancelar"
+            cancelLabel="Me quedo"
+            onConfirm={cancelar}
+            onCancel={() => setConfirmCancel(false)}
+          />
+        )}
+
+        <p className="mt-6 text-center text-xs leading-relaxed text-muted-foreground">
+          Pagás con Mercado Pago, se debita todos los meses y lo cortás cuando
+          quieras.{" "}
+          <Link href="/contacto#arrepentimiento" className="underline">
+            Cómo dar de baja
+          </Link>
+          .
         </p>
       </div>
     </div>

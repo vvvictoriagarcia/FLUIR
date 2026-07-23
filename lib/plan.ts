@@ -18,7 +18,7 @@ export function planMeets(plan: Plan, need: Plan): boolean {
 
 export const PLAN_LABELS: Record<Plan, string> = {
   free: "Free",
-  plus: "Plus",
+  plus: "Pro", // el plan se llama "Pro" en Mercado Pago; la clave interna sigue siendo "plus"
   gold: "Gold",
 };
 
