@@ -40,7 +40,7 @@ export default function GraciasPage() {
             ? "Estamos viendo cómo quedó tu cuenta…"
             : activo
               ? `Tu plan ${PLAN_LABELS[plan]} ya está andando. Entrá y aprovechalo.`
-              : "Mercado Pago nos avisa del pago en unos minutos y tu plan se activa solo. Si ya pagaste y todavía lo ves en Free, tocá actualizar."}
+              : "Ya recibimos tu pago. La activación puede tardar un rato: probá actualizar en unos minutos y, si seguís viendo Free, escribinos y lo destrabamos a mano el mismo día."}
         </p>
 
         <div className="mt-7 space-y-3">
