@@ -1,10 +1,12 @@
 "use client";
 
+import { useEffect } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { Lock, Sparkles } from "lucide-react";
 import { usePlan } from "@/hooks/usePlan";
 import { PLAN_LABELS, planMeets, type Plan } from "@/lib/plan";
+import { trackOnce } from "@/lib/analytics";
 
 /**
  * Muestra `children` solo si el plan del usuario alcanza `need`.
@@ -39,6 +41,12 @@ function Paywall({
   benefits?: string[];
 }) {
   const isGold = need === "gold";
+
+  // Cuánta gente choca con el paywall, y con cuál. Sin esto no se puede saber
+  // si una feature paga vende o solo molesta.
+  useEffect(() => {
+    trackOnce("paywall_viewed", { need, feature });
+  }, [need, feature]);
 
   return (
     <motion.div

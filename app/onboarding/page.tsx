@@ -16,6 +16,7 @@ import { persistBudget } from "@/lib/data";
 import { useUser } from "@/hooks/useUser";
 import { AnimatedNumber } from "@/components/animated-number";
 import { formatARS } from "@/lib/utils";
+import { track } from "@/lib/analytics";
 
 type ChoiceValue = string;
 
@@ -337,6 +338,7 @@ function Result({
   const maxAllocated = Math.max(...budget.categories.map((c) => c.allocated), 1);
 
   async function goToDashboard() {
+    track("onboarding_completed", { con_cuenta: loggedIn });
     try {
       await persistBudget(answers.income, answers, budget);
     } catch {

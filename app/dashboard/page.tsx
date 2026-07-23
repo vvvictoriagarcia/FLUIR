@@ -10,6 +10,7 @@ import { BottomNav } from "@/components/bottom-nav";
 import { UpcomingPayments } from "@/components/upcoming-payments";
 import { PortfolioCard } from "@/components/portfolio-card";
 import { touchLastSeen } from "@/lib/profile";
+import { track, trackOnce } from "@/lib/analytics";
 import { BudgetDonut } from "@/components/budget-donut";
 import { ExpenseModal } from "@/components/expense-modal";
 import { AnimatedNumber } from "@/components/animated-number";
@@ -53,6 +54,7 @@ export default function DashboardPage() {
     let active = true;
     // Señal de actividad para las campañas de mail (best-effort, no bloquea).
     touchLastSeen().catch(() => {});
+    trackOnce("dashboard_viewed");
     // Migra datos del demo a la cuenta (si recién te logueaste) y luego carga.
     migrateLocalToSupabase()
       .catch(() => {})
@@ -131,6 +133,9 @@ export default function DashboardPage() {
   async function handleAdd(category: string, amount: number, description: string) {
     try {
       const expense = await persistExpense(category, amount, description);
+      // El primer gasto es el momento en que la app deja de ser una promesa:
+      // es la métrica de activación que más importa.
+      if (expenses.length === 0) track("first_expense_created", { categoria: category });
       setExpenses((prev) => [expense, ...prev]);
       setModalOpen(false);
       toast("Gasto guardado");

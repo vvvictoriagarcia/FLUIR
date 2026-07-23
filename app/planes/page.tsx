@@ -12,6 +12,7 @@ import { usePlan } from "@/hooks/usePlan";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { PLAN_LABELS } from "@/lib/plan";
 import { checkoutUrl } from "@/lib/mercadopago/links";
+import { track } from "@/lib/analytics";
 import { cn } from "@/lib/utils";
 
 type PlanId = "free" | "plus" | "gold";
@@ -86,6 +87,8 @@ export default function PlanesPage() {
       return;
     }
 
+    // Tocó pagar: es el otro extremo del embudo del paywall.
+    track("paywall_converted", { plan });
     setLoading(plan);
     window.location.assign(checkoutUrl(plan));
   }
