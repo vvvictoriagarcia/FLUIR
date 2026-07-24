@@ -157,8 +157,8 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="min-h-screen pb-44">
-      <div className="mx-auto max-w-xl px-5 py-6">
+    <div className="min-h-screen pb-44 md:pl-60">
+      <div className="mx-auto max-w-xl px-5 py-6 lg:max-w-5xl">
         {/* Header */}
         <div className="mb-6 flex items-center justify-between">
           <Link
@@ -182,6 +182,8 @@ export default function DashboardPage() {
           </p>
         </div>
 
+        <div className="lg:grid lg:grid-cols-2 lg:items-start lg:gap-8">
+        <div>
         {/* Hero: anillo con lo que te queda para gastar */}
         <h1 className="sr-only">Te quedan {formatARS(paraGastar)} para gastar</h1>
         <div className="mt-5 flex justify-center">
@@ -247,6 +249,9 @@ export default function DashboardPage() {
           </div>
         )}
 
+        </div>
+
+        <div className="lg:mt-0">
         {/* Inversiones (solo Gold) */}
         <PortfolioCard />
 
@@ -372,11 +377,13 @@ export default function DashboardPage() {
             </div>
           </>
         )}
+        </div>
+        </div>
       </div>
 
       {/* FAB — centrado dentro de la columna de contenido, alineado a la derecha */}
       <div className="pointer-events-none fixed inset-x-0 bottom-20 z-30 px-5">
-        <div className="mx-auto flex max-w-xl justify-end">
+        <div className="mx-auto flex max-w-xl justify-end lg:max-w-5xl">
           <motion.button
             whileTap={{ scale: 0.92 }}
             onClick={() => setModalOpen(true)}

@@ -12,7 +12,7 @@ import { formatARS, cn } from "@/lib/utils";
 
 export default function HistorialPage() {
   return (
-    <div className="min-h-screen pb-24">
+    <div className="min-h-screen pb-24 md:pl-60">
       <div className="mx-auto max-w-xl px-5 py-6">
         <div className="mb-6 flex items-center justify-between">
           <Link

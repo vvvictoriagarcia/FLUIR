@@ -22,64 +22,122 @@ const ITEMS: Item[] = [
   { label: "Perfil", icon: User, href: "/perfil" },
 ];
 
-/** Navegación inferior, mobile-first. Historial y Gold están bloqueados (Plus/Gold). */
+/**
+ * Navegación de la app. UN solo componente con dos formas:
+ *
+ * - En celular (< md): barra fija abajo, como siempre.
+ * - En pantalla grande (≥ md): barra lateral fija a la izquierda.
+ *
+ * Antes la app era un celular estirado: barra inferior y una columna angosta
+ * al medio con dos márgenes vacíos enormes. Las páginas se corren con
+ * `md:pl-60` para dejarle lugar a la lateral.
+ */
 export function BottomNav() {
   const pathname = usePathname();
   const toast = useToast();
 
-  return (
-    <nav className="fixed inset-x-0 bottom-0 z-20 border-t border-border bg-background/90 pb-[env(safe-area-inset-bottom)] backdrop-blur">
-      <div className="mx-auto flex max-w-xl items-stretch justify-around">
-        {ITEMS.map((item) => {
-          const active = !!item.href && pathname === item.href;
-          const Icon = item.icon;
-          const className = cn(
-            "relative flex flex-1 flex-col items-center gap-1 py-2.5 text-[11px] font-medium transition-colors",
-            active
-              ? item.gold
-                ? "text-gold"
-                : "text-brand"
-              : "text-muted-foreground hover:text-foreground"
-          );
-          const inner = (
-            <>
-              <span className="relative">
-                <Icon
-                  size={22}
-                  className={item.gold && !active ? "text-gold/70" : undefined}
-                />
-                {item.soon && (
-                  <Lock
-                    size={10}
-                    className="absolute -right-1.5 -top-1 rounded-full bg-background"
-                  />
-                )}
-              </span>
-              {item.label}
-            </>
-          );
+  function estado(item: Item) {
+    const active = !!item.href && pathname === item.href;
+    const color = active
+      ? item.gold
+        ? "text-gold"
+        : "text-brand"
+      : "text-muted-foreground hover:text-foreground";
+    return { active, color };
+  }
 
-          return item.href ? (
-            <Link
-              key={item.label}
-              href={item.href}
-              prefetch={false}
-              className={className}
-            >
-              {inner}
-            </Link>
-          ) : (
-            <button
-              key={item.label}
-              type="button"
-              onClick={() => toast(item.soon ?? "Próximamente")}
-              className={className}
-            >
-              {inner}
-            </button>
-          );
-        })}
-      </div>
-    </nav>
+  return (
+    <>
+      {/* ── Celular: barra inferior ─────────────────────────────── */}
+      <nav className="fixed inset-x-0 bottom-0 z-20 border-t border-border bg-background/90 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden">
+        <div className="mx-auto flex max-w-xl items-stretch justify-around">
+          {ITEMS.map((item) => {
+            const { active, color } = estado(item);
+            const className = cn(
+              "relative flex flex-1 flex-col items-center gap-1 py-2.5 text-[11px] font-medium transition-colors",
+              color,
+            );
+            return item.href ? (
+              <Link
+                key={item.label}
+                href={item.href}
+                prefetch={false}
+                className={className}
+              >
+                <NavIcon item={item} active={active} />
+                {item.label}
+              </Link>
+            ) : (
+              <button
+                key={item.label}
+                type="button"
+                onClick={() => toast(item.soon ?? "Próximamente")}
+                className={className}
+              >
+                <NavIcon item={item} active={active} />
+                {item.label}
+              </button>
+            );
+          })}
+        </div>
+      </nav>
+
+      {/* ── Escritorio: barra lateral ───────────────────────────── */}
+      <aside className="fixed inset-y-0 left-0 z-20 hidden w-60 flex-col border-r border-border bg-background/90 px-4 py-6 backdrop-blur md:flex">
+        <Link
+          href="/inicio"
+          className="mb-8 px-3 font-display text-2xl font-semibold tracking-tight text-brand"
+        >
+          fluir
+        </Link>
+
+        <div className="flex flex-col gap-1">
+          {ITEMS.map((item) => {
+            const { active, color } = estado(item);
+            const className = cn(
+              "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors",
+              active ? "bg-muted" : "hover:bg-muted/60",
+              color,
+            );
+            return item.href ? (
+              <Link
+                key={item.label}
+                href={item.href}
+                prefetch={false}
+                className={className}
+              >
+                <NavIcon item={item} active={active} />
+                {item.label}
+              </Link>
+            ) : (
+              <button
+                key={item.label}
+                type="button"
+                onClick={() => toast(item.soon ?? "Próximamente")}
+                className={cn(className, "text-left")}
+              >
+                <NavIcon item={item} active={active} />
+                {item.label}
+              </button>
+            );
+          })}
+        </div>
+      </aside>
+    </>
+  );
+}
+
+function NavIcon({ item, active }: { item: Item; active: boolean }) {
+  const Icon = item.icon;
+  return (
+    <span className="relative">
+      <Icon size={22} className={item.gold && !active ? "text-gold/70" : undefined} />
+      {item.soon && (
+        <Lock
+          size={10}
+          className="absolute -right-1.5 -top-1 rounded-full bg-background"
+        />
+      )}
+    </span>
   );
 }
