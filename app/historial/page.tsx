@@ -16,7 +16,7 @@ export default function HistorialPage() {
       <div className="mx-auto max-w-xl px-5 py-6">
         <div className="mb-6 flex items-center justify-between">
           <Link
-            href="/dashboard"
+            href="/inicio"
             className="flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
           >
             <ArrowLeft size={16} />

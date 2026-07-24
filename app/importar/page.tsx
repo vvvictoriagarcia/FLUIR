@@ -253,7 +253,7 @@ export default function ImportarPage() {
               Ya están sumados a tu mes.
             </p>
             <Link
-              href="/dashboard"
+              href="/inicio"
               className="mt-6 inline-block rounded-full bg-brand px-6 py-3 text-sm font-medium text-brand-foreground"
             >
               Ver mi tablero

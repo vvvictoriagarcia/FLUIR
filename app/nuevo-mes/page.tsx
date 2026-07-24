@@ -36,7 +36,7 @@ export default function NuevoMesPage() {
     getMonthState().then((st) => {
       if (!active) return;
       if (st.state === "current") {
-        router.replace("/dashboard");
+        router.replace("/inicio");
         return;
       }
       if (st.state === "none") {
@@ -90,7 +90,7 @@ export default function NuevoMesPage() {
         : calculateBudget(updated);
     try {
       await persistBudget(finalIncome, updated, result);
-      router.push("/dashboard");
+      router.push("/inicio");
     } catch {
       setSaving(false);
       toast("No se pudo armar el mes. Revisá tu conexión.", "error");

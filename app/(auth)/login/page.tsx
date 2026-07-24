@@ -41,7 +41,7 @@ export default function LoginPage() {
     }
     // Si armó un presupuesto como invitado, lo subimos a su cuenta.
     await migrateLocalToSupabase().catch(() => false);
-    router.push(readNext("/dashboard"));
+    router.push(readNext("/inicio"));
   }
 
   async function handleGoogle() {
@@ -52,7 +52,7 @@ export default function LoginPage() {
     const supabase = createClient();
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
-      options: { redirectTo: `${window.location.origin}${readNext("/dashboard")}` },
+      options: { redirectTo: `${window.location.origin}${readNext("/inicio")}` },
     });
     if (error) {
       setError(

@@ -110,7 +110,7 @@ export default function PresupuestoPage() {
     try {
       await persistBudget(income, answers!, result);
       toast("Presupuesto actualizado");
-      router.push("/dashboard");
+      router.push("/inicio");
     } catch {
       setSaving(false);
       toast("No se pudo guardar. Revisá tu conexión.", "error");

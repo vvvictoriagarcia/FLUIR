@@ -108,7 +108,7 @@ export default function GastosPage() {
       <div className="mx-auto max-w-xl px-5 py-6">
         <div className="mb-6 flex items-center justify-between">
           <Link
-            href="/dashboard"
+            href="/inicio"
             className="font-display text-xl font-semibold tracking-tight text-brand"
           >
             fluir

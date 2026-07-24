@@ -61,7 +61,7 @@ const PLANES = [
 export default function Landing() {
   const { user, loading } = useUser();
   const loggedIn = !loading && !!user;
-  const ctaHref = loggedIn ? "/dashboard" : "/onboarding";
+  const ctaHref = loggedIn ? "/inicio" : "/onboarding";
   const ctaLabel = loggedIn ? "Ir a mi Fluir" : "Crear mi presupuesto gratis";
 
   return (
@@ -73,7 +73,7 @@ export default function Landing() {
         </span>
         <div className="flex items-center gap-3">
           <Link
-            href={loggedIn ? "/dashboard" : "/login"}
+            href={loggedIn ? "/inicio" : "/login"}
             className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
           >
             {loggedIn ? "Ir a mi Fluir" : "Ingresar"}

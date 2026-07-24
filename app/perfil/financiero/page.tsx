@@ -98,7 +98,7 @@ export default function PerfilFinancieroPage() {
     try {
       await persistBudget(income, updated, result);
       toast("Actualizamos tu presupuesto");
-      router.push("/dashboard");
+      router.push("/inicio");
     } catch {
       setSaving(false);
       toast("No se pudo guardar. Revisá tu conexión.", "error");

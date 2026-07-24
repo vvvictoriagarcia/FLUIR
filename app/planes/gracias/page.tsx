@@ -45,7 +45,7 @@ export default function GraciasPage() {
 
         <div className="mt-7 space-y-3">
           <Link
-            href="/dashboard"
+            href="/inicio"
             className="block w-full rounded-full bg-brand py-3.5 text-sm font-medium text-brand-foreground transition-opacity hover:opacity-90"
           >
             Ir a mi plata

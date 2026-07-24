@@ -55,7 +55,7 @@ export default function RegisterPage() {
     if (data.session) {
       // Migrar el presupuesto que armó como invitado (si lo hizo).
       const migrated = await migrateLocalToSupabase().catch(() => false);
-      router.push(readNext(migrated ? "/dashboard" : "/onboarding"));
+      router.push(readNext(migrated ? "/inicio" : "/onboarding"));
     } else {
       setSent(true);
     }

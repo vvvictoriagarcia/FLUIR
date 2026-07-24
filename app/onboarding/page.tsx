@@ -345,7 +345,7 @@ function Result({
       // En el demo sin sesión no falla; si hay sesión y falla, igual seguimos
       // con los datos locales y se reintenta al migrar.
     }
-    router.push("/dashboard");
+    router.push("/inicio");
   }
 
   return (

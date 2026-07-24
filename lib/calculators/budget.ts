@@ -124,10 +124,10 @@ export function calculateBudget(answers: OnboardingAnswers): BudgetResult {
   let tight_message: string | null = null;
   if (is_tight && ahorro_calculado < 0) {
     tight_message =
-      "Con tu perfil actual, los gastos fijos se llevan una parte importante de tu ingreso. Ajustamos un poco los límites de salidas y ropa para que tengas algo de margen. Podés modificarlos desde el dashboard cuando quieras.";
+      "Con tu perfil actual, los gastos fijos se llevan una parte importante de tu ingreso. Ajustamos un poco los límites de salidas y ropa para que tengas algo de margen. Podés modificarlos desde Mi presupuesto cuando quieras.";
   } else if (is_tight) {
     tight_message =
-      "Tu margen de ahorro este mes es ajustado. Está bien — Fluir te ayuda a ver adónde va tu plata igual. Si querés más margen, podés bajar algún límite desde el dashboard.";
+      "Tu margen de ahorro este mes es ajustado. Está bien — Fluir te ayuda a ver adónde va tu plata igual. Si querés más margen, podés bajar algún límite desde Mi presupuesto.";
   }
 
   // Paso 8: armar resultado

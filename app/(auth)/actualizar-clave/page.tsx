@@ -68,7 +68,7 @@ export default function ActualizarClavePage() {
     return (
       <AuthShell title="¡Listo! 🎉" subtitle="Tu contraseña quedó actualizada">
         <Link
-          href="/dashboard"
+          href="/inicio"
           className="mt-2 block w-full rounded-full bg-brand py-3.5 text-center font-medium text-brand-foreground"
         >
           Ir a Fluir
