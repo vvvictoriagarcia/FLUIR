@@ -32,6 +32,32 @@ const FEATURES = [
   },
 ];
 
+const PLANES = [
+  {
+    name: "Free",
+    price: "$0",
+    detail: "Para siempre",
+    features: [
+      "Presupuesto armado en 3 minutos",
+      "Gastos, objetivos y pagos fijos",
+      "Cargá tus gastos con una foto",
+    ],
+  },
+  {
+    name: "Pro",
+    price: "$4.000",
+    detail: "por mes",
+    destacado: true,
+    features: ["Todo lo de Free", "Historial mes a mes", "Comparativa entre meses"],
+  },
+  {
+    name: "Gold",
+    price: "$9.000",
+    detail: "por mes",
+    features: ["Todo lo de Pro", "Guía para empezar a invertir", "Seguimiento de tu cartera"],
+  },
+];
+
 export default function Landing() {
   const { user, loading } = useUser();
   const loggedIn = !loading && !!user;
@@ -141,7 +167,7 @@ export default function Landing() {
             ))}
           </div>
           <p className="mt-4 text-center text-xs text-positive">
-            Tasa de ahorro: 18% 🎉
+            De cada $100 que entran, guardás $18 🎉
           </p>
         </motion.div>
       </section>
@@ -165,6 +191,59 @@ export default function Landing() {
             </motion.div>
           ))}
         </div>
+      </section>
+
+      {/* Precios — cobrar en pesos es la ventaja contra la competencia
+          internacional (4 a 15 dólares por mes) y no la estábamos diciendo. */}
+      <section className="mx-auto max-w-4xl px-6 pb-20">
+        <h2 className="text-center font-display text-3xl font-semibold tracking-tight">
+          Precios en pesos, sin sorpresas
+        </h2>
+        <p className="mx-auto mt-2 max-w-lg text-center text-muted-foreground">
+          Empezá gratis y quedate en Free todo lo que quieras. Si algún día
+          querés más, cuesta menos que un delivery.
+        </p>
+
+        <div className="mt-8 grid gap-4 sm:grid-cols-3">
+          {PLANES.map((p) => (
+            <div
+              key={p.name}
+              className={`rounded-card border bg-card p-6 ${
+                p.destacado ? "border-brand" : "border-border"
+              }`}
+            >
+              <div className="flex items-baseline justify-between">
+                <h3 className="font-semibold">{p.name}</h3>
+                {p.destacado && (
+                  <span className="rounded-full bg-brand/10 px-2.5 py-0.5 text-[11px] font-medium text-brand">
+                    Más elegido
+                  </span>
+                )}
+              </div>
+              <p className="mt-3">
+                <span className="font-display text-3xl font-semibold tabular-nums">
+                  {p.price}
+                </span>{" "}
+                <span className="text-sm text-muted-foreground">{p.detail}</span>
+              </p>
+              <ul className="mt-4 space-y-2">
+                {p.features.map((f) => (
+                  <li key={f} className="flex items-start gap-2 text-sm text-muted-foreground">
+                    <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-positive" />
+                    {f}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </div>
+
+        <p className="mt-5 text-center text-sm text-muted-foreground">
+          Cancelás cuando querés, desde la app.{" "}
+          <Link href="/planes" className="font-medium text-brand">
+            Ver qué incluye cada plan
+          </Link>
+        </p>
       </section>
 
       <footer className="border-t border-border px-6 py-8 text-center text-sm text-muted-foreground">

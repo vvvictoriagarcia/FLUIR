@@ -200,7 +200,7 @@ export default function DashboardPage() {
         {/* KPIs */}
         <div className="mt-6 grid grid-cols-3 gap-3">
           <Kpi label="Ingreso" value={income} />
-          <Kpi label="Comprometido" value={comprometido} />
+          <Kpi label="Gastos fijos" value={comprometido} />
           <Kpi label="Ahorro" value={ahorro} accent="positive" />
         </div>
 
@@ -210,7 +210,7 @@ export default function DashboardPage() {
           <p className="mt-3 text-center text-xs leading-relaxed text-muted-foreground">
             De tus{" "}
             <span className="font-medium text-foreground">{formatARS(income)}</span>:{" "}
-            {formatARS(comprometido)} comprometidos, {formatARS(ahorro)} al ahorro
+            {formatARS(comprometido)} en gastos fijos, {formatARS(ahorro)} al ahorro
             {variableSpent > 0 ? ` y ${formatARS(variableSpent)} ya gastados` : ""} →
             te quedan{" "}
             <span className="font-medium text-foreground">
@@ -312,7 +312,7 @@ export default function DashboardPage() {
         {fixedCats.length > 0 && (
           <>
             <h2 className="mt-8 mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              Comprometido este mes
+              Tus gastos fijos del mes
             </h2>
             <div className="rounded-card border border-border bg-card p-4">
               <div className="space-y-3">

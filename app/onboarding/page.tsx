@@ -433,7 +433,7 @@ function Result({
           )}
 
           <p className="mt-4 text-center text-sm text-positive">
-            Tasa de ahorro: {(budget.savings_rate * 100).toFixed(1)}%
+            {`De cada $100 que entran, guardás $${(budget.savings_rate * 100).toFixed(0)}`}
           </p>
 
           {/* Acciones */}
