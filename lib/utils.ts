@@ -27,3 +27,13 @@ export function siteUrl(): string {
   }
   return raw.replace(/\/$/, "");
 }
+
+/**
+ * Primera letra en mayúscula, respetando el resto.
+ * Se aplica al MOSTRAR: el nombre se guarda tal como lo escribió la persona.
+ * "victoria" → "Victoria" · "MARÍA josé" → "MARÍA josé" (no toca lo demás).
+ */
+export function capitalize(texto: string): string {
+  if (!texto) return "";
+  return texto.charAt(0).toLocaleUpperCase("es-AR") + texto.slice(1);
+}

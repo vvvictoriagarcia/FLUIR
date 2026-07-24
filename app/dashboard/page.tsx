@@ -20,7 +20,7 @@ import { useToast } from "@/components/toast";
 import { useUser } from "@/hooks/useUser";
 import { useInflation } from "@/hooks/useInflation";
 import { projectGoal } from "@/lib/goal-math";
-import { formatARS } from "@/lib/utils";
+import { formatARS, capitalize } from "@/lib/utils";
 import {
   getMonthState,
   loadDashboard,
@@ -124,11 +124,15 @@ export default function DashboardPage() {
           ? "var(--gold)"
           : "var(--positive)";
 
-  const firstName = (
-    (user?.user_metadata?.full_name as string) ||
-    user?.email?.split("@")[0] ||
-    ""
-  ).split(" ")[0];
+  // Capitalizamos al MOSTRAR: el nombre se guarda tal como lo escribió la
+  // persona (o como lo manda Google), y "Hola victoria" queda descuidado.
+  const firstName = capitalize(
+    (
+      (user?.user_metadata?.full_name as string) ||
+      user?.email?.split("@")[0] ||
+      ""
+    ).split(" ")[0],
+  );
 
   async function handleAdd(category: string, amount: number, description: string) {
     try {
@@ -145,7 +149,7 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="min-h-screen pb-28">
+    <div className="min-h-screen pb-44">
       <div className="mx-auto max-w-xl px-5 py-6">
         {/* Header */}
         <div className="mb-6 flex items-center justify-between">
@@ -352,7 +356,6 @@ export default function DashboardPage() {
           <motion.button
             whileTap={{ scale: 0.92 }}
             onClick={() => setModalOpen(true)}
-            aria-label="Registrar gasto"
             className="pointer-events-auto flex items-center gap-2 rounded-full bg-brand px-5 py-4 font-medium text-brand-foreground shadow-lg shadow-brand/30"
           >
             <Plus className="h-5 w-5" />
