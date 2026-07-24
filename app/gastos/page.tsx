@@ -104,7 +104,7 @@ export default function GastosPage() {
   }
 
   return (
-    <div className="min-h-screen pb-28">
+    <div className="min-h-screen pb-40">
       <div className="mx-auto max-w-xl px-5 py-6">
         <div className="mb-6 flex items-center justify-between">
           <Link
@@ -195,7 +195,6 @@ export default function GastosPage() {
           <motion.button
             whileTap={{ scale: 0.92 }}
             onClick={() => setModal({ mode: "add" })}
-            aria-label="Registrar gasto"
             className="pointer-events-auto flex items-center gap-2 rounded-full bg-brand px-5 py-4 font-medium text-brand-foreground shadow-lg shadow-brand/30"
           >
             <Plus className="h-5 w-5" />
