@@ -223,3 +223,35 @@ export function recalcFromLimits(
 function round2(n: number): number {
   return Math.round(n * 100) / 100;
 }
+
+// ─────────────────────────────────────────────────────────────────
+// Desglose del mes, para poder ESCRIBIR la cuenta en el dashboard.
+// Los cuatro números (ingreso, comprometido, ahorro, "te quedan") se explican
+// entre sí, pero antes había que descubrir la resta solo.
+// ─────────────────────────────────────────────────────────────────
+
+export interface MonthBreakdown {
+  income: number;
+  comprometido: number;
+  ahorro: number;
+  gastado: number;
+  quedan: number;
+  /**
+   * true si `ingreso − comprometido − ahorro − gastado === quedan`.
+   * Si da false NO hay que mostrar la frase: preferimos no decir nada antes
+   * que mostrarle a alguien una cuenta que no cierra.
+   */
+  cierra: boolean;
+}
+
+export function monthBreakdown(input: {
+  income: number;
+  comprometido: number;
+  ahorro: number;
+  gastado: number;
+  quedan: number;
+}): MonthBreakdown {
+  const esperado = input.income - input.comprometido - input.ahorro - input.gastado;
+  // Tolerancia de un peso: los porcentajes redondeados pueden dejar centavos.
+  return { ...input, cierra: Math.abs(esperado - input.quedan) <= 1 };
+}

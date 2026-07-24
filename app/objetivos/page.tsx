@@ -24,7 +24,7 @@ import {
 } from "@/lib/data";
 import type { Goal } from "@/lib/budget-store";
 import { totalSpent } from "@/lib/budget-store";
-import { useInflation } from "@/hooks/useInflation";
+import { useInflation, inflationNote } from "@/hooks/useInflation";
 import { projectGoal } from "@/lib/goal-math";
 import { formatARS, cn } from "@/lib/utils";
 
@@ -162,6 +162,12 @@ export default function ObjetivosPage() {
             ))
           )}
         </div>
+
+        {goals && goals.length > 0 && (
+          <p className="mt-5 text-xs leading-relaxed text-muted-foreground">
+            {inflationNote(inflation)}
+          </p>
+        )}
       </div>
 
       {/* Sin AnimatePresence a propósito: en este stack su `exit` se cuelga y

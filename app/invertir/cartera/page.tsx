@@ -186,8 +186,12 @@ function Cartera() {
   const valued = valuate(holdings, prices);
   const t = totals(valued);
   const edad = ageLabel(prices?.asOf ?? null);
+  // Ítem 16: todo monto en dólares dice con qué cotización se convirtió.
+  // Si no tenemos MEP, no inventamos: mostramos pesos.
+  const hayMep = !!prices?.dolar.mep;
+  const verDolares = enDolares && hayMep;
   const fmt = (ars: number) =>
-    enDolares
+    verDolares
       ? `US$ ${aDolares(ars, prices).toLocaleString("es-AR", { maximumFractionDigits: 0 })}`
       : formatARS(ars);
 
@@ -215,7 +219,7 @@ function Cartera() {
             onClick={() => setEnDolares((v) => !v)}
             className="rounded-full border border-border px-3 py-1.5 text-xs font-medium transition-colors hover:bg-muted"
           >
-            Ver en {enDolares ? "pesos" : "dólares"}
+            Ver en {verDolares ? "pesos" : "dólares"}
           </button>
           </div>
         </div>
@@ -234,7 +238,9 @@ function Cartera() {
               animate={{ opacity: 1, y: 0 }}
               className="mt-5 rounded-card border border-border bg-card p-5"
             >
-              <p className="text-sm text-muted-foreground">Tenés invertido</p>
+              <p className="text-sm text-muted-foreground">
+                Tenés invertido{verDolares ? " (al dólar MEP)" : ""}
+              </p>
               <p className="mt-1 font-display text-4xl font-semibold tabular-nums">
                 {fmt(t.valor)}
               </p>

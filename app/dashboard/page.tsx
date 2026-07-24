@@ -35,6 +35,7 @@ import {
   type Goal,
   type SavedBudget,
 } from "@/lib/budget-store";
+import { monthBreakdown } from "@/lib/calculators/budget";
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -112,6 +113,13 @@ export default function DashboardPage() {
   // Lo que realmente te queda para gastar: presupuesto variable − lo gastado.
   const paraGastar = variableBudget - variableSpent;
   const ahorro = budget.result.total_savings;
+  const desglose = monthBreakdown({
+    income,
+    comprometido,
+    ahorro,
+    gastado: variableSpent,
+    quedan: paraGastar,
+  });
 
   // Anillo: cuánto del presupuesto variable ya gastaste, con color semáforo.
   const usedRatio = variableBudget > 0 ? variableSpent / variableBudget : 0;
@@ -195,6 +203,22 @@ export default function DashboardPage() {
           <Kpi label="Comprometido" value={comprometido} />
           <Kpi label="Ahorro" value={ahorro} accent="positive" />
         </div>
+
+        {/* La cuenta, escrita. Solo si efectivamente cierra: preferimos no
+            decir nada antes que mostrar una resta que no da. */}
+        {desglose.cierra && (
+          <p className="mt-3 text-center text-xs leading-relaxed text-muted-foreground">
+            De tus{" "}
+            <span className="font-medium text-foreground">{formatARS(income)}</span>:{" "}
+            {formatARS(comprometido)} comprometidos, {formatARS(ahorro)} al ahorro
+            {variableSpent > 0 ? ` y ${formatARS(variableSpent)} ya gastados` : ""} →
+            te quedan{" "}
+            <span className="font-medium text-foreground">
+              {formatARS(paraGastar)}
+            </span>
+            .
+          </p>
+        )}
 
         {/* Meta de ahorro */}
         {goal > 0 && (

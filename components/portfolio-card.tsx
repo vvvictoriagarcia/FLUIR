@@ -99,15 +99,15 @@ export function PortfolioCard() {
       </div>
 
       <div className="mt-3 flex items-center gap-4">
-        <div className="h-24 w-24 shrink-0">
+        <div className="h-20 w-20 shrink-0">
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
               <Pie
                 data={grafico}
                 dataKey="value"
                 nameKey="name"
-                innerRadius={28}
-                outerRadius={46}
+                innerRadius={24}
+                outerRadius={38}
                 paddingAngle={2}
                 stroke="none"
               >
@@ -120,7 +120,10 @@ export function PortfolioCard() {
         </div>
 
         <div className="min-w-0 flex-1">
-          <p className="font-display text-2xl font-semibold tabular-nums">
+          {/* Ítem 14: patrimonio y flujo de caja son preguntas distintas. El
+              número grande del dashboard es "cuánto puedo gastar"; la cartera
+              baja de jerarquía para no competir con eso. */}
+          <p className="text-lg font-semibold tabular-nums">
             {formatARS(t.valor)}
           </p>
           <p

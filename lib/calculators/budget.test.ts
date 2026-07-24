@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import {
   calculateBudget,
+  monthBreakdown,
   recalcFromLimits,
   type BudgetCategory,
   type OnboardingAnswers,
@@ -111,5 +112,62 @@ describe("recalcFromLimits", () => {
 
     expect(find(r, "Vivienda")!.limit).toBe(200_000);
     expect(find(r, "Ahorro")!.limit).toBe(200_000); // 500k - 200k - 100k
+  });
+});
+
+describe("monthBreakdown", () => {
+  it("cierra cuando todavía no gastaste nada", () => {
+    const b = monthBreakdown({
+      income: 2000000,
+      comprometido: 800000,
+      ahorro: 549400,
+      gastado: 0,
+      quedan: 650600,
+    });
+    expect(b.cierra).toBe(true);
+  });
+
+  it("cierra descontando lo ya gastado", () => {
+    const b = monthBreakdown({
+      income: 2000000,
+      comprometido: 800000,
+      ahorro: 549400,
+      gastado: 45000,
+      quedan: 605600,
+    });
+    expect(b.cierra).toBe(true);
+  });
+
+  it("marca que NO cierra si los números no dan", () => {
+    const b = monthBreakdown({
+      income: 2000000,
+      comprometido: 800000,
+      ahorro: 549400,
+      gastado: 45000,
+      quedan: 650600, // se olvidó de restar lo gastado
+    });
+    expect(b.cierra).toBe(false);
+  });
+
+  it("tolera un peso de redondeo", () => {
+    const b = monthBreakdown({
+      income: 1000000,
+      comprometido: 300000,
+      ahorro: 200000,
+      gastado: 100000,
+      quedan: 399999,
+    });
+    expect(b.cierra).toBe(true);
+  });
+
+  it("cierra igual si te pasaste (queda negativo)", () => {
+    const b = monthBreakdown({
+      income: 1000000,
+      comprometido: 300000,
+      ahorro: 200000,
+      gastado: 600000,
+      quedan: -100000,
+    });
+    expect(b.cierra).toBe(true);
   });
 });
