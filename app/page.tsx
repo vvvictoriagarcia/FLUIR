@@ -2,33 +2,42 @@
 
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { ArrowRight, Sparkles, Target, TrendingUp, Zap } from "lucide-react";
+import { ArrowRight, Sparkles, Target, Zap, LineChart, Camera } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { useUser } from "@/hooks/useUser";
 import { WHATSAPP_DISPLAY, whatsapp } from "@/lib/contact";
 
 const CHECKS = [
-  "Sin tarjeta",
+  "Gratis, sin tarjeta",
   "Sin conectar el banco",
-  "100% argentino",
+  // Ítem 20: "sin conectar el banco" es honesto pero significa carga manual.
+  // Se compensa mostrando acá mismo que no hace falta tipear.
+  "Cargás un gasto con una foto",
   "En 3 minutos",
 ];
 
 const FEATURES = [
   {
     icon: Zap,
-    title: "Onboarding en 3 min",
+    title: "Tu presupuesto en 3 min",
     desc: "Sin saber de finanzas. Contestás 6 preguntas y listo.",
   },
   {
     icon: Target,
-    title: "Adaptado a vos",
-    desc: "No es un Excel genérico. Entiende si alquilás, si tenés auto, cómo salís.",
+    title: "Adaptada a cómo vivís acá",
+    desc: "Entiende si alquilás, si tenés auto, si pagás en cuotas y cómo salís.",
+  },
+  // Ítem 19: el diferencial argentino es la inflación y el dólar, no la
+  // bandera. Ya está construido; faltaba decirlo.
+  {
+    icon: LineChart,
+    title: "Cuenta con la inflación",
+    desc: "Tus objetivos se proyectan con la inflación del INDEC: sabés cuánto va a costar de verdad, no cuánto cuesta hoy.",
   },
   {
-    icon: TrendingUp,
-    title: "Tu plata, sin culpa",
-    desc: "Te dice cuánto podés gastar de verdad — y cuánto te queda.",
+    icon: Camera,
+    title: "Sin tipear cada gasto",
+    desc: "Sacale una foto al resumen de la tarjeta y Fluir carga los movimientos solo.",
   },
 ];
 
@@ -91,7 +100,7 @@ export default function Landing() {
         >
           <span className="mb-6 inline-flex items-center gap-2 rounded-full border border-border bg-card px-4 py-1.5 text-sm font-medium text-muted-foreground">
             <Sparkles className="h-3.5 w-3.5 text-brand" />
-            Finanzas para jóvenes argentinos
+            Para que la inflación no te coma el sueldo
           </span>
 
           <h1 className="font-display text-5xl font-semibold leading-[1.05] tracking-tight sm:text-6xl">
@@ -174,7 +183,7 @@ export default function Landing() {
 
       {/* Features */}
       <section className="mx-auto max-w-4xl px-6 pb-20">
-        <div className="grid gap-4 sm:grid-cols-3">
+        <div className="grid gap-4 sm:grid-cols-2">
           {FEATURES.map((f, i) => (
             <motion.div
               key={f.title}
