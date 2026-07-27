@@ -229,7 +229,7 @@ function Cartera() {
 
   return (
     <div className="min-h-screen pb-44 md:pl-60">
-      <div className="mx-auto max-w-xl px-5 py-6 lg:max-w-5xl">
+      <div className="mx-auto max-w-xl px-5 py-6 lg:max-w-6xl lg:px-8 xl:max-w-[1400px]">
         <div className="mb-6 flex items-center justify-between">
           <Link
             href="/inicio"
