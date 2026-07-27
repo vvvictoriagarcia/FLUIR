@@ -16,6 +16,7 @@ import {
   LifeBuoy,
   CalendarClock,
   CreditCard,
+  Wallet,
 } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { BottomNav } from "@/components/bottom-nav";
@@ -104,6 +105,7 @@ export default function PerfilPage() {
 
         {/* Menú */}
         <div className="mt-4 overflow-hidden rounded-card border border-border bg-card">
+          <Row href="/patrimonio" icon={Wallet} label="Mis ahorros" hint="Lo que ya tenías guardado — ajustalo cuando quieras" />
           <Row href="/pagos" icon={CalendarClock} label="Pagos fijos" hint="Alquiler, tarjeta, seguro: te avisamos antes de que venzan" />
           <Row href="/objetivos" icon={Target} label="Objetivos" hint="Metas de ahorro con plazo y monto" />
           <Row href="/importar" icon={Upload} label="Importar movimientos" hint="Resumen o CSV → gastos, sin cargar a mano" />

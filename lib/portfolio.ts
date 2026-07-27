@@ -228,6 +228,32 @@ export async function createHolding(input: Omit<Holding, "id">): Promise<Holding
   return { ...item, id: data.id };
 }
 
+/** Edita una tenencia existente (para corregir errores de carga). */
+export async function updateHolding(
+  id: string,
+  patch: Pick<Holding, "ticker" | "name" | "kind" | "quantity" | "avgPrice">,
+): Promise<void> {
+  const uid = await getUserId();
+  if (!uid) {
+    const items = readLocal().map((h) =>
+      h.id === id ? { ...h, ...patch, ticker: patch.ticker.toUpperCase() } : h,
+    );
+    writeLocal(items);
+    return;
+  }
+  const { error } = await createClient()
+    .from("holdings")
+    .update({
+      ticker: patch.ticker.toUpperCase(),
+      name: patch.name || null,
+      kind: patch.kind,
+      quantity: patch.quantity,
+      avg_price: patch.avgPrice,
+    })
+    .eq("id", id);
+  if (error) throw new Error(error.message);
+}
+
 export async function deleteHolding(id: string): Promise<void> {
   const uid = await getUserId();
   if (!uid) {

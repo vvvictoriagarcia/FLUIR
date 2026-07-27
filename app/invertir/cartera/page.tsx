@@ -10,6 +10,7 @@ import {
   Camera,
   Trash2,
   Tag,
+  Pencil,
   RotateCw,
   TrendingUp,
   HelpCircle,
@@ -22,6 +23,7 @@ import {
   loadHoldings,
   loadClosedHoldings,
   createHolding,
+  updateHolding,
   deleteHolding,
   closeHolding,
   fetchPrices,
@@ -70,6 +72,7 @@ function Cartera() {
   const [leyendo, setLeyendo] = useState(false);
   const [toDelete, setToDelete] = useState<ValuedHolding | null>(null);
   const [toSell, setToSell] = useState<ValuedHolding | null>(null);
+  const [toEdit, setToEdit] = useState<ValuedHolding | null>(null);
   const [preview, setPreview] = useState<Omit<Holding, "id">[] | null>(null);
 
   const refresh = useCallback(async (force = false) => {
@@ -397,6 +400,13 @@ function Cartera() {
                         Vendí
                       </button>
                       <button
+                        onClick={() => setToEdit(h)}
+                        className="flex items-center gap-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground"
+                      >
+                        <Pencil size={13} />
+                        Editar
+                      </button>
+                      <button
                         onClick={() => setToDelete(h)}
                         aria-label={`Borrar ${h.ticker}`}
                         className="flex items-center gap-1.5 text-xs text-muted-foreground transition-colors hover:text-negative"
@@ -515,6 +525,18 @@ function Cartera() {
         />
       )}
 
+      {toEdit && (
+        <NuevaTenenciaModal
+          initial={toEdit}
+          onClose={() => setToEdit(null)}
+          onCreated={async () => {
+            setToEdit(null);
+            await refresh();
+            toast("Listo, lo corregimos.");
+          }}
+        />
+      )}
+
       {preview && (
         <PreviewImportModal
           items={preview}
@@ -594,18 +616,26 @@ const KINDS: HoldingKind[] = [
 ];
 
 function NuevaTenenciaModal({
+  initial,
   onClose,
   onCreated,
 }: {
+  /** Si viene, el modal edita esa tenencia en vez de crear una nueva. */
+  initial?: Holding;
   onClose: () => void;
   onCreated: () => void;
 }) {
   const toast = useToast();
-  const [ticker, setTicker] = useState("");
-  const [name, setName] = useState("");
-  const [kind, setKind] = useState<HoldingKind>("cedear");
-  const [quantity, setQuantity] = useState("");
-  const [avgPrice, setAvgPrice] = useState("");
+  const editando = !!initial;
+  const [ticker, setTicker] = useState(initial?.ticker ?? "");
+  const [name, setName] = useState(initial?.name ?? "");
+  const [kind, setKind] = useState<HoldingKind>(initial?.kind ?? "cedear");
+  const [quantity, setQuantity] = useState(
+    initial ? String(initial.quantity) : "",
+  );
+  const [avgPrice, setAvgPrice] = useState(
+    initial ? String(initial.avgPrice) : "",
+  );
   const [saving, setSaving] = useState(false);
 
   async function save() {
@@ -617,13 +647,15 @@ function NuevaTenenciaModal({
     }
     setSaving(true);
     try {
-      await createHolding({
+      const datos = {
         ticker: ticker.trim().toUpperCase(),
         name: name.trim(),
         kind,
         quantity: cant,
         avgPrice: precio,
-      });
+      };
+      if (initial) await updateHolding(initial.id, datos);
+      else await createHolding(datos);
       onCreated();
     } catch {
       toast("No pudimos guardarlo.", "error");
@@ -640,7 +672,9 @@ function NuevaTenenciaModal({
         transition={{ duration: 0.25 }}
         className="max-h-[92vh] w-full max-w-md overflow-y-auto rounded-t-3xl border border-border bg-card p-5 sm:rounded-3xl"
       >
-        <h2 className="font-display text-xl font-semibold">Agregar a tu cartera</h2>
+        <h2 className="font-display text-xl font-semibold">
+          {editando ? `Editar ${initial.ticker}` : "Agregar a tu cartera"}
+        </h2>
 
         <label className="mt-4 block">
           <span className="text-sm text-muted-foreground">Ticker</span>
@@ -721,7 +755,7 @@ function NuevaTenenciaModal({
             disabled={saving}
             className="flex-1 rounded-full bg-gold py-3 text-sm font-medium text-gold-foreground transition-opacity hover:opacity-90 disabled:opacity-60"
           >
-            {saving ? "Guardando…" : "Agregar"}
+            {saving ? "Guardando…" : editando ? "Guardar cambios" : "Agregar"}
           </button>
         </div>
       </motion.div>

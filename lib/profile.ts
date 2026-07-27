@@ -51,6 +51,43 @@ async function getUserId(): Promise<string | null> {
   return data.session?.user.id ?? null;
 }
 
+const SAVINGS_KEY = "fluir_savings_balance";
+
+/**
+ * Ahorros que ya tenés (saldo acumulado, arranca de lo previo a usar Fluir).
+ * Supabase si hay sesión, localStorage si no.
+ */
+export async function loadSavingsBalance(): Promise<number> {
+  const uid = await getUserId();
+  if (!uid) {
+    if (typeof window === "undefined") return 0;
+    return Number(localStorage.getItem(SAVINGS_KEY)) || 0;
+  }
+  const { data } = await createClient()
+    .from("profiles")
+    .select("savings_balance")
+    .eq("id", uid)
+    .maybeSingle();
+  return Number(data?.savings_balance) || 0;
+}
+
+/** Guarda el saldo de ahorros. false si no se pudo guardar en la nube. */
+export async function saveSavingsBalance(monto: number): Promise<boolean> {
+  const n = Math.max(0, Math.round(monto));
+  if (typeof window !== "undefined") {
+    try {
+      localStorage.setItem(SAVINGS_KEY, String(n));
+    } catch {}
+  }
+  const uid = await getUserId();
+  if (!uid) return true;
+  const { error } = await createClient()
+    .from("profiles")
+    .update({ savings_balance: n })
+    .eq("id", uid);
+  return !error;
+}
+
 /** Preferencias de mail: de Supabase si hay sesión, si no del navegador. */
 export async function loadEmailPrefs(): Promise<EmailPrefs> {
   const uid = await getUserId();

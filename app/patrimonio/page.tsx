@@ -19,6 +19,7 @@ import {
   loadHistory,
   type MonthSummary,
 } from "@/lib/data";
+import { loadSavingsBalance, saveSavingsBalance } from "@/lib/profile";
 import {
   loadHoldings,
   loadClosedHoldings,
@@ -46,17 +47,22 @@ interface Resumen {
 export default function PatrimonioPage() {
   const toast = useToast();
   const [r, setR] = useState<Resumen | null>(null);
+  const [ahorros, setAhorros] = useState<number | null>(null);
+  const [editando, setEditando] = useState(false);
+  const [input, setInput] = useState("");
 
   useEffect(() => {
     let activo = true;
     (async () => {
       try {
-        const [dash, holdings, closed, history] = await Promise.all([
+        const [dash, holdings, closed, history, saldo] = await Promise.all([
           loadDashboard(),
           loadHoldings(),
           loadClosedHoldings(),
           loadHistory(),
+          loadSavingsBalance(),
         ]);
+        if (activo) setAhorros(saldo);
         const prices = holdings.length
           ? await fetchPrices(holdings.map((h) => h.ticker))
           : null;
@@ -86,6 +92,14 @@ export default function PatrimonioPage() {
     };
   }, [toast]);
 
+  async function guardarAhorros() {
+    const monto = Number(input.replace(/\D/g, ""));
+    setAhorros(monto);
+    setEditando(false);
+    const ok = await saveSavingsBalance(monto);
+    if (!ok) toast("No pudimos guardar. Probá de nuevo.", "error");
+  }
+
   return (
     <div className="min-h-screen pb-24 md:pl-60">
       <div className="mx-auto max-w-xl px-5 py-6 lg:max-w-5xl">
@@ -109,6 +123,68 @@ export default function PatrimonioPage() {
         <p className="mt-1 text-muted-foreground">
           Todo junto: lo que ahorrás, lo que gastás y lo que invertís.
         </p>
+
+        {/* Mis ahorros — saldo editable, arranca de lo que ya tenías */}
+        <div className="mt-6 rounded-card border border-border bg-card p-5">
+          {editando ? (
+            <div>
+              <label className="text-sm text-muted-foreground">
+                ¿Cuánto tenés ahorrado en total?
+              </label>
+              <div className="mt-1.5 flex items-center gap-2 rounded-2xl border-2 border-brand bg-background p-3">
+                <span className="font-display text-xl text-muted-foreground">$</span>
+                <input
+                  autoFocus
+                  inputMode="numeric"
+                  value={
+                    input ? Number(input.replace(/\D/g, "")).toLocaleString("es-AR") : ""
+                  }
+                  onChange={(e) => setInput(e.target.value)}
+                  placeholder="0"
+                  className="w-full bg-transparent font-display text-xl font-semibold tabular-nums outline-none placeholder:text-muted-foreground/40"
+                />
+              </div>
+              <div className="mt-3 flex gap-2">
+                <button
+                  onClick={() => setEditando(false)}
+                  className="flex-1 rounded-full border border-border py-2.5 text-sm font-medium transition-colors hover:bg-muted"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={guardarAhorros}
+                  className="flex-1 rounded-full bg-brand py-2.5 text-sm font-medium text-brand-foreground transition-opacity hover:opacity-90"
+                >
+                  Guardar
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="flex items-center justify-between gap-3">
+              <div className="min-w-0">
+                <p className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                  <PiggyBank size={14} />
+                  Mis ahorros
+                </p>
+                <p className="mt-1 font-display text-3xl font-semibold tabular-nums">
+                  {ahorros === null ? "—" : formatARS(ahorros)}
+                </p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Poné acá lo que ya tenías guardado. Ajustalo cuando quieras.
+                </p>
+              </div>
+              <button
+                onClick={() => {
+                  setInput(ahorros ? String(ahorros) : "");
+                  setEditando(true);
+                }}
+                className="shrink-0 rounded-full border border-border px-4 py-2 text-sm font-medium transition-colors hover:bg-muted"
+              >
+                {ahorros ? "Ajustar" : "Cargar"}
+              </button>
+            </div>
+          )}
+        </div>
 
         {r === null ? (
           <div className="mt-6 grid grid-cols-2 gap-3 lg:grid-cols-4">
