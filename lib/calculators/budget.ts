@@ -255,3 +255,30 @@ export function monthBreakdown(input: {
   // Tolerancia de un peso: los porcentajes redondeados pueden dejar centavos.
   return { ...input, cierra: Math.abs(esperado - input.quedan) <= 1 };
 }
+
+// ─────────────────────────────────────────────────────────────────
+// Comparación de tasa de ahorro contra el mes pasado, para el inicio.
+// Da contexto ("¿venís mejor o peor?") sin asustar: es el dato más estable
+// del mes y se muestra en criollo. Devuelve null si no hay con qué comparar.
+// ─────────────────────────────────────────────────────────────────
+
+export interface SavingsTrend {
+  /** Puntos de diferencia vs el mes pasado (redondeado). + mejor, − peor. */
+  deltaPts: number;
+  mejor: boolean;
+}
+
+/**
+ * @param rateActual  tasa de ahorro de este mes (0–1), la proyectada del budget.
+ * @param rateAnterior tasa de ahorro real del mes pasado (0–1), o null.
+ */
+export function savingsTrend(
+  rateActual: number,
+  rateAnterior: number | null,
+): SavingsTrend | null {
+  if (rateAnterior === null || !Number.isFinite(rateAnterior)) return null;
+  const deltaPts = Math.round(rateActual * 100 - rateAnterior * 100);
+  // Sin diferencia relevante no mostramos nada: evita "▲ 0 más".
+  if (deltaPts === 0) return null;
+  return { deltaPts, mejor: deltaPts > 0 };
+}

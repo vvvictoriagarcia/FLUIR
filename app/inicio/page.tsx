@@ -25,6 +25,7 @@ import {
   getMonthState,
   loadDashboard,
   loadGoals,
+  loadHistory,
   migrateLocalToSupabase,
   persistExpense,
 } from "@/lib/data";
@@ -35,7 +36,7 @@ import {
   type Goal,
   type SavedBudget,
 } from "@/lib/budget-store";
-import { monthBreakdown } from "@/lib/calculators/budget";
+import { monthBreakdown, savingsTrend } from "@/lib/calculators/budget";
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -46,6 +47,7 @@ export default function DashboardPage() {
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [goal, setGoal] = useState(0);
   const [topGoal, setTopGoal] = useState<Goal | null>(null);
+  const [prevSavedPct, setPrevSavedPct] = useState<number | null>(null);
   const [loaded, setLoaded] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
 
@@ -79,6 +81,14 @@ export default function DashboardPage() {
         setExpenses(expenses);
         setGoal(getSavingsGoal());
         setLoaded(true);
+        // Tasa de ahorro real del mes pasado, para comparar contra la de este
+        // mes. Es el mes más reciente del historial que no es el actual.
+        loadHistory()
+          .then((h) => {
+            const prev = h.find((m) => !m.month.startsWith(budget.month));
+            if (active && prev) setPrevSavedPct(prev.savedPct);
+          })
+          .catch(() => {});
       });
     // Objetivo más cercano a cumplirse, para mostrarlo en el dashboard.
     loadGoals().then((gs) => {
@@ -123,6 +133,7 @@ export default function DashboardPage() {
     gastado: variableSpent,
     quedan: paraGastar,
   });
+  const trend = savingsTrend(budget.result.savings_rate, prevSavedPct);
 
   // Anillo: cuánto del presupuesto variable ya gastaste, con color semáforo.
   const usedRatio = variableBudget > 0 ? variableSpent / variableBudget : 0;
@@ -162,21 +173,24 @@ export default function DashboardPage() {
   return (
     <div className="min-h-screen pb-44 md:pl-60">
       <div className="mx-auto max-w-xl px-5 py-6 lg:max-w-5xl">
-        {/* Header */}
+        {/* Header — el logo va solo en mobile; en escritorio está en la barra
+            lateral, así que acá solo dejamos el toggle de tema. */}
         <div className="mb-6 flex items-center justify-between">
           <Link
             href="/"
-            className="font-display text-xl font-semibold tracking-tight text-brand"
+            className="font-display text-xl font-semibold tracking-tight text-brand md:hidden"
           >
             fluir
           </Link>
-          <ThemeToggle />
+          <div className="ml-auto">
+            <ThemeToggle />
+          </div>
         </div>
 
         {/* Saludo + mensaje dinámico */}
-        <div className="text-center">
+        <div className="mb-5 text-center lg:text-left">
           {firstName && (
-            <p className="font-display text-lg font-semibold">
+            <p className="font-display text-lg font-semibold lg:text-2xl">
               Hola {firstName} 👋
             </p>
           )}
@@ -184,12 +198,10 @@ export default function DashboardPage() {
             {monthGreeting(budget, variableSpent)}
           </p>
         </div>
-
-        <div className="lg:grid lg:grid-cols-2 lg:items-start lg:gap-8">
-        <div>
-        {/* Hero: anillo con lo que te queda para gastar */}
         <h1 className="sr-only">Te quedan {formatARS(paraGastar)} para gastar</h1>
-        <div className="mt-5 flex justify-center">
+
+        {/* Anillo grande — solo en mobile (es el héroe de la pantalla chica) */}
+        <div className="mb-6 flex justify-center lg:hidden">
           <ProgressRing ratio={usedRatio} color={ringColor}>
             <span className="text-xs text-muted-foreground">Te quedan</span>
             <AnimatedNumber
@@ -202,17 +214,44 @@ export default function DashboardPage() {
           </ProgressRing>
         </div>
 
-        {/* KPIs */}
-        <div className="mt-6 grid grid-cols-3 gap-3">
+        {/* Fila de métricas — a lo ancho. En escritorio la primera es el
+            "disponible" con un anillo compacto; en mobile ese ya se mostró
+            grande arriba y acá van solo las 3 métricas. */}
+        <div className="grid grid-cols-3 gap-3 lg:grid-cols-4 lg:gap-4">
+          <div className="col-span-3 hidden items-center gap-3 rounded-card border border-border bg-card p-4 lg:col-span-1 lg:flex">
+            <ProgressRing ratio={usedRatio} color={ringColor} size={64} stroke={7} />
+            <div className="min-w-0">
+              <p className="text-xs text-muted-foreground">Te quedan</p>
+              <p
+                className={`font-display text-xl font-semibold tabular-nums ${
+                  paraGastar >= 0 ? "text-foreground" : "text-negative"
+                }`}
+              >
+                {formatARS(paraGastar)}
+              </p>
+            </div>
+          </div>
           <Kpi label="Ingreso" value={income} />
           <Kpi label="Gastos fijos" value={comprometido} />
-          <Kpi label="Ahorro" value={ahorro} accent="positive" />
+          <Kpi
+            label="Ahorro"
+            value={ahorro}
+            accent="positive"
+            trend={
+              trend
+                ? {
+                    texto: `${trend.mejor ? "▲" : "▼"} ${Math.abs(trend.deltaPts)} pts vs mes pasado`,
+                    mejor: trend.mejor,
+                  }
+                : undefined
+            }
+          />
         </div>
 
         {/* La cuenta, escrita. Solo si efectivamente cierra: preferimos no
             decir nada antes que mostrar una resta que no da. */}
         {desglose.cierra && (
-          <p className="mt-3 text-center text-xs leading-relaxed text-muted-foreground">
+          <p className="mt-3 text-center text-xs leading-relaxed text-muted-foreground lg:text-left">
             De tus{" "}
             <span className="font-medium text-foreground">{formatARS(income)}</span>:{" "}
             {formatARS(comprometido)} en gastos fijos, {formatARS(ahorro)} al ahorro
@@ -225,178 +264,176 @@ export default function DashboardPage() {
           </p>
         )}
 
-        {/* Meta de ahorro */}
-        {goal > 0 && (
-          <div className="mt-6 rounded-card border border-border bg-card p-5">
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-medium">🎯 Meta de ahorro</span>
-              <span className="tabular-nums text-sm text-muted-foreground">
-                {formatARS(ahorro)} / {formatARS(goal)}
-              </span>
-            </div>
-            <div className="mt-2 h-2.5 overflow-hidden rounded-full bg-muted">
-              <motion.div
-                initial={{ width: 0 }}
-                animate={{ width: `${Math.min((ahorro / goal) * 100, 100)}%` }}
-                transition={{ duration: 0.7, ease: "easeOut" }}
-                className={`h-full rounded-full ${
-                  ahorro >= goal ? "bg-positive" : "bg-brand"
-                }`}
-              />
-            </div>
-            <p className="mt-2 text-xs text-muted-foreground">
-              {ahorro >= goal
-                ? "¡Llegaste a tu meta! 🎉"
-                : `Te faltan ${formatARS(goal - ahorro)} para tu meta`}
-            </p>
-          </div>
-        )}
+        {/* Grilla principal: en escritorio, contenido ancho a la izquierda y una
+            columna de tarjetas "de un vistazo" a la derecha. En mobile se apila
+            todo en una sola columna. */}
+        <div className="mt-6 lg:grid lg:grid-cols-12 lg:items-start lg:gap-6">
+          {/* Columna lateral (en mobile va primera, como antes) */}
+          <div className="space-y-4 lg:order-2 lg:col-span-4">
+            <PortfolioCard />
+            <UpcomingPayments />
 
-        </div>
+            {topGoal ? (
+              <TopGoalCard goal={topGoal} monthlyRate={inflation.monthlyRate} />
+            ) : (
+              <Link
+                href="/objetivos"
+                className="flex items-center gap-3 rounded-card border border-border bg-card p-4 transition-colors hover:bg-muted"
+              >
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand/10 text-brand">
+                  🎯
+                </span>
+                <div className="min-w-0">
+                  <p className="text-sm font-medium">Ponete un objetivo</p>
+                  <p className="text-xs text-muted-foreground">
+                    Ahorrá para lo que querés, con plazo y monto
+                  </p>
+                </div>
+                <ChevronRight className="ml-auto h-5 w-5 shrink-0 text-muted-foreground" />
+              </Link>
+            )}
 
-        <div className="lg:mt-0">
-        {/* Inversiones (solo Gold) */}
-        <PortfolioCard />
-
-        {/* Pagos fijos: lo que se viene */}
-        <UpcomingPayments />
-
-        {/* Objetivos — objetivo más cercano con proyección por inflación */}
-        {topGoal ? (
-          <TopGoalCard goal={topGoal} monthlyRate={inflation.monthlyRate} />
-        ) : (
-          <Link
-            href="/objetivos"
-            className="mt-4 flex items-center gap-3 rounded-card border border-border bg-card p-4 transition-colors hover:bg-muted"
-          >
-            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand/10 text-brand">
-              🎯
-            </span>
-            <div className="min-w-0">
-              <p className="text-sm font-medium">Ponete un objetivo</p>
-              <p className="text-xs text-muted-foreground">
-                Ahorrá para lo que querés, con plazo y monto
-              </p>
-            </div>
-            <ChevronRight className="ml-auto h-5 w-5 shrink-0 text-muted-foreground" />
-          </Link>
-        )}
-
-        {/* Distribución del presupuesto */}
-        <div className="mt-8 mb-3 flex items-center justify-between">
-          <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            Distribución
-          </h2>
-          <Link
-            href="/perfil/presupuesto"
-            className="text-xs font-medium text-brand transition-opacity hover:opacity-80"
-          >
-            Ajustar montos
-          </Link>
-        </div>
-        <div className="rounded-card border border-border bg-card p-5">
-          <BudgetDonut categories={budget.result.categories} />
-        </div>
-
-        {/* Para gastar — categorías variables */}
-        <h2 className="mt-8 mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-          Para gastar
-        </h2>
-
-        {expenses.length === 0 && <EmptyState onAdd={() => setModalOpen(true)} />}
-
-        <div className="space-y-3">
-          {variableCats.map((c) => (
-            <CategoryRow
-              key={c.category}
-              name={c.category}
-              used={spent[c.category] ?? 0}
-              limit={c.limit}
-            />
-          ))}
-        </div>
-
-        {/* Comprometido — gastos fijos ya descontados */}
-        {fixedCats.length > 0 && (
-          <>
-            <h2 className="mt-8 mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              Tus gastos fijos del mes
-            </h2>
-            <div className="rounded-card border border-border bg-card p-4">
-              <div className="space-y-3">
-                {fixedCats.map((c) => (
-                  <div
-                    key={c.category}
-                    className="flex items-center justify-between text-sm"
-                  >
-                    <span className="flex items-center gap-2 font-medium">
-                      {c.category}
-                      <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">
-                        fijo
-                      </span>
-                    </span>
-                    <span className="tabular-nums text-muted-foreground">
-                      {formatARS(c.limit)}
-                    </span>
-                  </div>
-                ))}
-              </div>
-              <p className="mt-3 border-t border-border pt-3 text-xs text-muted-foreground">
-                Ya descontados de tu ingreso. Ajustá los montos reales desde{" "}
-                <Link href="/perfil/presupuesto" className="text-brand">
-                  Mi presupuesto
-                </Link>
-                .
-              </p>
-            </div>
-          </>
-        )}
-
-        {/* Gastos recientes */}
-        {expenses.length > 0 && (
-          <>
-            <h2 className="mt-8 mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              Últimos movimientos
-            </h2>
-            <div className="space-y-2">
-              {expenses.slice(0, 8).map((e) => (
-                <div
-                  key={e.id}
-                  className="flex items-center justify-between rounded-xl border border-border bg-card px-4 py-3 text-sm"
-                >
-                  <div>
-                    <div className="font-medium">{e.category}</div>
-                    {e.description && (
-                      <div className="text-xs text-muted-foreground">
-                        {e.description}
-                      </div>
-                    )}
-                  </div>
-                  <span className="tabular-nums font-medium text-negative">
-                    −{formatARS(e.amount)}
+            {goal > 0 && (
+              <div className="rounded-card border border-border bg-card p-5">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium">🎯 Meta de ahorro</span>
+                  <span className="tabular-nums text-sm text-muted-foreground">
+                    {formatARS(ahorro)} / {formatARS(goal)}
                   </span>
                 </div>
+                <div className="mt-2 h-2.5 overflow-hidden rounded-full bg-muted">
+                  <motion.div
+                    initial={{ width: 0 }}
+                    animate={{ width: `${Math.min((ahorro / goal) * 100, 100)}%` }}
+                    transition={{ duration: 0.7, ease: "easeOut" }}
+                    className={`h-full rounded-full ${
+                      ahorro >= goal ? "bg-positive" : "bg-brand"
+                    }`}
+                  />
+                </div>
+                <p className="mt-2 text-xs text-muted-foreground">
+                  {ahorro >= goal
+                    ? "¡Llegaste a tu meta! 🎉"
+                    : `Te faltan ${formatARS(goal - ahorro)} para tu meta`}
+                </p>
+              </div>
+            )}
+          </div>
+
+          {/* Columna principal */}
+          <div className="mt-4 lg:mt-0 lg:order-1 lg:col-span-8">
+            {/* Distribución del presupuesto */}
+            <div className="mb-3 flex items-center justify-between">
+              <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                Distribución
+              </h2>
+              <Link
+                href="/perfil/presupuesto"
+                className="text-xs font-medium text-brand transition-opacity hover:opacity-80"
+              >
+                Ajustar montos
+              </Link>
+            </div>
+            <div className="rounded-card border border-border bg-card p-5">
+              <BudgetDonut categories={budget.result.categories} />
+            </div>
+
+            {/* Para gastar — categorías variables */}
+            <h2 className="mt-8 mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              Para gastar
+            </h2>
+
+            {expenses.length === 0 && <EmptyState onAdd={() => setModalOpen(true)} />}
+
+            <div className="grid gap-3 sm:grid-cols-2">
+              {variableCats.map((c) => (
+                <CategoryRow
+                  key={c.category}
+                  name={c.category}
+                  used={spent[c.category] ?? 0}
+                  limit={c.limit}
+                />
               ))}
             </div>
-          </>
-        )}
-        </div>
+
+            {/* Comprometido — gastos fijos ya descontados */}
+            {fixedCats.length > 0 && (
+              <>
+                <h2 className="mt-8 mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  Tus gastos fijos del mes
+                </h2>
+                <div className="rounded-card border border-border bg-card p-4">
+                  <div className="space-y-3">
+                    {fixedCats.map((c) => (
+                      <div
+                        key={c.category}
+                        className="flex items-center justify-between text-sm"
+                      >
+                        <span className="flex items-center gap-2 font-medium">
+                          {c.category}
+                          <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">
+                            fijo
+                          </span>
+                        </span>
+                        <span className="tabular-nums text-muted-foreground">
+                          {formatARS(c.limit)}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                  <p className="mt-3 border-t border-border pt-3 text-xs text-muted-foreground">
+                    Ya descontados de tu ingreso. Ajustá los montos reales desde{" "}
+                    <Link href="/perfil/presupuesto" className="text-brand">
+                      Mi presupuesto
+                    </Link>
+                    .
+                  </p>
+                </div>
+              </>
+            )}
+
+            {/* Gastos recientes */}
+            {expenses.length > 0 && (
+              <>
+                <h2 className="mt-8 mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  Últimos movimientos
+                </h2>
+                <div className="space-y-2">
+                  {expenses.slice(0, 8).map((e) => (
+                    <div
+                      key={e.id}
+                      className="flex items-center justify-between rounded-xl border border-border bg-card px-4 py-3 text-sm"
+                    >
+                      <div>
+                        <div className="font-medium">{e.category}</div>
+                        {e.description && (
+                          <div className="text-xs text-muted-foreground">
+                            {e.description}
+                          </div>
+                        )}
+                      </div>
+                      <span className="tabular-nums font-medium text-negative">
+                        −{formatARS(e.amount)}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
         </div>
       </div>
 
-      {/* FAB — centrado dentro de la columna de contenido, alineado a la derecha */}
-      <div className="pointer-events-none fixed inset-x-0 bottom-20 z-30 px-5">
-        <div className="mx-auto flex max-w-xl justify-end lg:max-w-5xl">
-          <motion.button
-            whileTap={{ scale: 0.92 }}
-            onClick={() => setModalOpen(true)}
-            className="pointer-events-auto flex items-center gap-2 rounded-full bg-brand px-5 py-4 font-medium text-brand-foreground shadow-lg shadow-brand/30"
-          >
-            <Plus className="h-5 w-5" />
-            Cargar gasto
-          </motion.button>
-        </div>
-      </div>
+      {/* FAB. En mobile: sobre la barra inferior. En escritorio: pegado a la
+          esquina de la ventana, no flotando en el medio del contenido. */}
+      <motion.button
+        whileTap={{ scale: 0.92 }}
+        onClick={() => setModalOpen(true)}
+        className="fixed bottom-20 right-5 z-30 flex items-center gap-2 rounded-full bg-brand px-5 py-4 font-medium text-brand-foreground shadow-lg shadow-brand/30 md:bottom-8 md:right-8"
+      >
+        <Plus className="h-5 w-5" />
+        Cargar gasto
+      </motion.button>
 
       {/* Modal de carga */}
       <AnimatePresence>
@@ -418,10 +455,13 @@ function Kpi({
   label,
   value,
   accent,
+  trend,
 }: {
   label: string;
   value: number;
   accent?: "positive" | "negative";
+  /** Comparación opcional con el mes pasado (ítem "vs mes pasado"). */
+  trend?: { texto: string; mejor: boolean };
 }) {
   const color =
     accent === "positive"
@@ -434,8 +474,17 @@ function Kpi({
       <p className="text-xs text-muted-foreground">{label}</p>
       <AnimatedNumber
         value={value}
-        className={`mt-1 block text-sm font-semibold tabular-nums ${color}`}
+        className={`mt-1 block text-base font-semibold tabular-nums ${color}`}
       />
+      {trend && (
+        <p
+          className={`mt-0.5 text-[11px] font-medium ${
+            trend.mejor ? "text-positive" : "text-muted-foreground"
+          }`}
+        >
+          {trend.texto}
+        </p>
+      )}
     </div>
   );
 }

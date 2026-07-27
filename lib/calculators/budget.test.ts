@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   calculateBudget,
   monthBreakdown,
+  savingsTrend,
   recalcFromLimits,
   type BudgetCategory,
   type OnboardingAnswers,
@@ -169,5 +170,25 @@ describe("monthBreakdown", () => {
       quedan: -100000,
     });
     expect(b.cierra).toBe(true);
+  });
+});
+
+describe("savingsTrend", () => {
+  it("marca mejora en puntos", () => {
+    const t = savingsTrend(0.31, 0.28);
+    expect(t).toEqual({ deltaPts: 3, mejor: true });
+  });
+
+  it("marca caída", () => {
+    const t = savingsTrend(0.2, 0.28);
+    expect(t).toEqual({ deltaPts: -8, mejor: false });
+  });
+
+  it("no muestra nada si no hay mes pasado", () => {
+    expect(savingsTrend(0.31, null)).toBeNull();
+  });
+
+  it("no muestra nada si la diferencia redondea a 0", () => {
+    expect(savingsTrend(0.312, 0.309)).toBeNull();
   });
 });
