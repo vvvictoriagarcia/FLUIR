@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
-import { Plus, ChevronRight } from "lucide-react";
+import { Plus, ChevronRight, Target } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { BottomNav } from "@/components/bottom-nav";
 import { UpcomingPayments } from "@/components/upcoming-payments";
@@ -137,14 +137,15 @@ export default function DashboardPage() {
 
   // Anillo: cuánto del presupuesto variable ya gastaste, con color semáforo.
   const usedRatio = variableBudget > 0 ? variableSpent / variableBudget : 0;
+  // Semáforo del presupuesto en 3 pasos, todo en paleta: verde (vas bien) →
+  // ámbar de alerta (cuidado) → rojo (te pasaste). No usa el gold, que en Fluir
+  // significa "inversiones/tier Gold".
   const ringColor =
     usedRatio >= 1
       ? "var(--negative)"
-      : usedRatio >= 0.9
-        ? "#f97316"
-        : usedRatio >= 0.7
-          ? "var(--gold)"
-          : "var(--positive)";
+      : usedRatio >= 0.75
+        ? "var(--warning)"
+        : "var(--positive)";
 
   // Capitalizamos al MOSTRAR: el nombre se guarda tal como lo escribió la
   // persona (o como lo manda Google), y "Hola victoria" queda descuidado.
@@ -281,7 +282,7 @@ export default function DashboardPage() {
                 className="flex items-center gap-3 rounded-card border border-border bg-card p-4 transition-colors hover:bg-muted"
               >
                 <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand/10 text-brand">
-                  🎯
+                  <Target size={18} />
                 </span>
                 <div className="min-w-0">
                   <p className="text-sm font-medium">Ponete un objetivo</p>
@@ -296,7 +297,10 @@ export default function DashboardPage() {
             {goal > 0 && (
               <div className="rounded-card border border-border bg-card p-5">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium">🎯 Meta de ahorro</span>
+                  <span className="flex items-center gap-1.5 text-sm font-medium">
+                    <Target size={15} className="text-brand" />
+                    Meta de ahorro
+                  </span>
                   <span className="tabular-nums text-sm text-muted-foreground">
                     {formatARS(ahorro)} / {formatARS(goal)}
                   </span>
@@ -501,17 +505,16 @@ function CategoryRow({
   const ratio = limit > 0 ? used / limit : 0;
   const pct = Math.min(ratio * 100, 100);
 
+  // Mismo semáforo de 3 pasos que el anillo, en paleta (sin gold ni naranjas
+  // sueltos): verde → ámbar de alerta → rojo.
   let barColor = "bg-positive";
   let note = `${formatARS(Math.max(limit - used, 0))} disponible`;
   if (ratio >= 1) {
     barColor = "bg-negative";
     note = `Llegaste al límite de ${name}`;
-  } else if (ratio >= 0.9) {
-    barColor = "bg-orange-500";
+  } else if (ratio >= 0.75) {
+    barColor = "bg-warning";
     note = `Quedan ${formatARS(limit - used)} — frenate un poco`;
-  } else if (ratio >= 0.7) {
-    barColor = "bg-gold";
-    note = "Casi llegando al límite";
   }
 
   return (
@@ -548,11 +551,12 @@ function TopGoalCard({ goal, monthlyRate }: { goal: Goal; monthlyRate: number })
   return (
     <Link
       href="/objetivos"
-      className="mt-4 block rounded-card border border-border bg-card p-5 transition-colors hover:bg-muted/50"
+      className="block rounded-card border border-border bg-card p-5 transition-colors hover:bg-muted/50"
     >
       <div className="flex items-center justify-between">
         <span className="flex items-center gap-2 text-sm font-medium">
-          🎯 {goal.name}
+          <Target size={15} className="text-brand" />
+          {goal.name}
         </span>
         <span className="text-xs text-muted-foreground">
           {Math.round(pct * 100)}%

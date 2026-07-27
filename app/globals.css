@@ -23,6 +23,7 @@
   --gold-foreground: #1a1a2e;
   --positive: #3ebd8f; /* ganancia, superávit */
   --negative: #e05c5c; /* pérdida, gasto excedido */
+  --warning: #e0872e; /* alerta de presupuesto (ámbar cálido, NO es el gold) */
 
   --radius: 1rem;
 }
@@ -46,6 +47,7 @@
   --gold-foreground: #1a1a2e;
   --positive: #3ebd8f;
   --negative: #e05c5c;
+  --warning: #eb9740;
 }
 
 /* ───────────────────────────────────────────────
@@ -68,6 +70,7 @@
   --color-gold-foreground: var(--gold-foreground);
   --color-positive: var(--positive);
   --color-negative: var(--negative);
+  --color-warning: var(--warning);
 
   --font-display: var(--font-fraunces);
   --font-sans: var(--font-inter);

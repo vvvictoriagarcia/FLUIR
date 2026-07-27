@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { ArrowLeft, Check, Plus, X } from "lucide-react";
+import { ArrowLeft, Check, Plus, X, Target } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { FullScreenLoader } from "@/components/loading";
 import { useToast } from "@/components/toast";
@@ -259,7 +259,10 @@ export default function PresupuestoPage() {
 
         {/* Meta de ahorro */}
         <div className="mt-8 rounded-card border border-border bg-card p-4">
-          <label className="text-sm font-medium">🎯 Meta de ahorro del mes</label>
+          <label className="flex items-center gap-1.5 text-sm font-medium">
+            <Target size={15} className="text-brand" />
+            Meta de ahorro del mes
+          </label>
           <p className="mt-0.5 text-xs text-muted-foreground">
             Cuánto querés guardar este mes. Te mostramos el progreso en el inicio.
           </p>

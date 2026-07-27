@@ -10,6 +10,7 @@ import {
   Trash2,
   Sparkles,
   PartyPopper,
+  TrendingUp,
 } from "lucide-react";
 import { BottomNav } from "@/components/bottom-nav";
 import { ConfirmDialog } from "@/components/confirm-dialog";
@@ -124,8 +125,9 @@ export default function ObjetivosPage() {
               Ponele nombre, monto y fecha a lo que querés lograr.
             </p>
             {inflation.lastValue != null && (
-              <p className="mt-1.5 text-xs text-muted-foreground">
-                📈 Proyectado con inflación de {inflation.lastValue}%/mes
+              <p className="mt-1.5 flex items-center gap-1.5 text-xs text-muted-foreground">
+                <TrendingUp size={13} className="shrink-0 text-brand" />
+                Proyectado con inflación de {inflation.lastValue}%/mes
                 {inflation.source === "INDEC" ? " (INDEC)" : " (estimado)"}
               </p>
             )}
@@ -257,10 +259,13 @@ function GoalCard({
       </div>
 
       {inflated && !done && (
-        <p className="mt-1.5 text-xs text-muted-foreground">
-          📈 Con inflación, a {deadlineLabel(goal.targetDate)} va a costar{" "}
-          <span className="font-medium text-foreground">
-            ~{formatARS(inflatedTarget)}
+        <p className="mt-1.5 flex items-start gap-1.5 text-xs text-muted-foreground">
+          <TrendingUp size={13} className="mt-0.5 shrink-0 text-brand" />
+          <span>
+            Con inflación, a {deadlineLabel(goal.targetDate)} va a costar{" "}
+            <span className="font-medium text-foreground">
+              ~{formatARS(inflatedTarget)}
+            </span>
           </span>
         </p>
       )}
