@@ -105,7 +105,7 @@ export default function ObjetivosPage() {
 
   return (
     <div className="min-h-screen pb-24 md:pl-60">
-      <div className="mx-auto max-w-xl px-5 py-6">
+      <div className="mx-auto max-w-xl px-5 py-6 lg:max-w-5xl">
         <div className="mb-6 flex items-center justify-between">
           <Link
             href="/inicio"
@@ -139,7 +139,7 @@ export default function ObjetivosPage() {
           </button>
         </div>
 
-        <div className="mt-6 space-y-4">
+        <div className="mt-6 grid gap-4 sm:grid-cols-2">
           {goals === null ? (
             [0, 1].map((i) => (
               <div
@@ -148,7 +148,9 @@ export default function ObjetivosPage() {
               />
             ))
           ) : goals.length === 0 ? (
-            <EmptyState onNew={() => setShowNew(true)} />
+            <div className="sm:col-span-2">
+              <EmptyState onNew={() => setShowNew(true)} />
+            </div>
           ) : (
             goals.map((g, i) => (
               <GoalCard

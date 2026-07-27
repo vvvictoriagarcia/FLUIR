@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
+import { PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
 import {
   ArrowLeft,
   Plus,
@@ -197,7 +198,7 @@ function Cartera() {
 
   return (
     <div className="min-h-screen pb-44 md:pl-60">
-      <div className="mx-auto max-w-xl px-5 py-6">
+      <div className="mx-auto max-w-xl px-5 py-6 lg:max-w-5xl">
         <div className="mb-6 flex items-center justify-between">
           <Link
             href="/inicio"
@@ -232,45 +233,73 @@ function Cartera() {
           <EmptyState onAdd={() => setOpenNew(true)} onFoto={() => fileRef.current?.click()} leyendo={leyendo} />
         ) : (
           <>
-            {/* El número grande */}
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="mt-5 rounded-card border border-border bg-card p-5"
-            >
-              <p className="text-sm text-muted-foreground">
-                Tenés invertido{verDolares ? " (al dólar MEP)" : ""}
-              </p>
-              <p className="mt-1 font-display text-4xl font-semibold tabular-nums">
-                {fmt(t.valor)}
-              </p>
-              <p
-                className={cn(
-                  "mt-2 text-sm font-medium tabular-nums",
-                  t.ganancia >= 0 ? "text-positive" : "text-negative",
-                )}
-              >
-                {t.ganancia >= 0 ? "▲" : "▼"} {fmt(Math.abs(t.ganancia))} (
-                {t.gananciaPct >= 0 ? "+" : ""}
-                {t.gananciaPct.toFixed(1)}%) desde que compraste
-              </p>
-              <p className="mt-1 text-xs text-muted-foreground">
-                Pusiste {fmt(t.costo)}
-                {prices?.dolar.mep
-                  ? ` · dólar MEP $${prices.dolar.mep.toLocaleString("es-AR")}`
-                  : ""}
-                {edad ? ` · precios ${edad}` : ""}
-              </p>
+            {/* Fila de métricas de la cartera */}
+            <div className="mt-5 grid grid-cols-2 gap-3 lg:grid-cols-4 lg:gap-4">
+              <div className="rounded-card border border-border bg-card p-4">
+                <p className="text-xs text-muted-foreground">
+                  Tenés invertido{verDolares ? " (MEP)" : ""}
+                </p>
+                <p className="mt-1 font-display text-2xl font-semibold tabular-nums">
+                  {fmt(t.valor)}
+                </p>
+              </div>
+              <div className="rounded-card border border-border bg-card p-4">
+                <p className="text-xs text-muted-foreground">Ganancia</p>
+                <p
+                  className={cn(
+                    "mt-1 text-lg font-semibold tabular-nums",
+                    t.ganancia >= 0 ? "text-positive" : "text-negative",
+                  )}
+                >
+                  {t.ganancia >= 0 ? "+" : "−"}
+                  {fmt(Math.abs(t.ganancia))}
+                </p>
+                <p
+                  className={cn(
+                    "text-xs tabular-nums",
+                    t.ganancia >= 0 ? "text-positive" : "text-negative",
+                  )}
+                >
+                  {t.gananciaPct >= 0 ? "+" : ""}
+                  {t.gananciaPct.toFixed(1)}% desde que compraste
+                </p>
+              </div>
+              <div className="rounded-card border border-border bg-card p-4">
+                <p className="text-xs text-muted-foreground">En dólares</p>
+                <p className="mt-1 text-lg font-semibold tabular-nums">
+                  {prices?.dolar.mep
+                    ? `US$ ${aDolares(t.valor, prices).toLocaleString("es-AR", { maximumFractionDigits: 0 })}`
+                    : "—"}
+                </p>
+                {prices?.dolar.mep ? (
+                  <p className="text-xs text-muted-foreground tabular-nums">
+                    MEP ${prices.dolar.mep.toLocaleString("es-AR")}
+                  </p>
+                ) : null}
+              </div>
+              <div className="rounded-card border border-border bg-card p-4">
+                <p className="text-xs text-muted-foreground">Activos</p>
+                <p className="mt-1 text-lg font-semibold tabular-nums">
+                  {valued.length}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Pusiste {fmt(t.costo)}
+                </p>
+              </div>
+            </div>
 
+            {/* Actualizar precios + antigüedad del dato */}
+            <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
               <button
                 onClick={actualizarPrecios}
                 disabled={refreshing}
-                className="mt-3 flex items-center gap-1.5 text-xs font-medium text-brand disabled:opacity-60"
+                className="flex items-center gap-1.5 font-medium text-brand disabled:opacity-60"
               >
                 <RotateCw size={13} className={refreshing ? "animate-spin" : ""} />
                 {refreshing ? "Actualizando…" : "Actualizar precios"}
               </button>
-            </motion.div>
+              {edad ? <span>· precios {edad}</span> : null}
+            </div>
 
             {(t.sinPrecio > 0 || prices?.parcial) && (
               <p className="mt-3 rounded-xl bg-muted px-3 py-2 text-xs text-muted-foreground">
@@ -280,66 +309,73 @@ function Cartera() {
               </p>
             )}
 
-            <div className="mt-5 space-y-3">
-              {valued.map((h, i) => (
-                <motion.div
-                  key={h.id}
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: i * 0.04 }}
-                  className="rounded-card border border-border bg-card p-4"
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <p className="truncate font-medium">
-                        {h.ticker}
-                        {h.name ? (
-                          <span className="ml-1.5 text-sm font-normal text-muted-foreground">
-                            {h.name}
-                          </span>
-                        ) : null}
-                      </p>
-                      <p className="mt-0.5 text-sm text-muted-foreground">
-                        {h.quantity.toLocaleString("es-AR")} × {formatARS(h.price)} ·{" "}
-                        {KIND_LABELS[h.kind]}
-                      </p>
-                    </div>
-                    <div className="shrink-0 text-right">
-                      <p className="font-medium tabular-nums">{fmt(h.valor)}</p>
-                      <p
-                        className={cn(
-                          "text-sm tabular-nums",
-                          h.sinPrecio
-                            ? "text-muted-foreground"
-                            : h.ganancia >= 0
-                              ? "text-positive"
-                              : "text-negative",
-                        )}
-                      >
-                        {h.sinPrecio
-                          ? "sin cotización"
-                          : `${h.gananciaPct >= 0 ? "+" : ""}${h.gananciaPct.toFixed(1)}%`}
-                      </p>
-                    </div>
-                  </div>
+            {/* Composición (izq) + lista de tenencias (der) */}
+            <div className="mt-6 lg:grid lg:grid-cols-3 lg:items-start lg:gap-6">
+              <div className="lg:col-span-1">
+                <Composicion valued={valued} totalValor={t.valor} />
+              </div>
 
-                  <button
-                    onClick={() => setToDelete(h)}
-                    aria-label={`Borrar ${h.ticker}`}
-                    className="mt-3 flex items-center gap-1.5 text-xs text-muted-foreground transition-colors hover:text-negative"
+              <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:col-span-2 lg:mt-0">
+                {valued.map((h, i) => (
+                  <motion.div
+                    key={h.id}
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: i * 0.04 }}
+                    className="rounded-card border border-border bg-card p-4"
                   >
-                    <Trash2 size={13} />
-                    Sacar de la cartera
-                  </button>
-                </motion.div>
-              ))}
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="truncate font-medium">
+                          {h.ticker}
+                          {h.name ? (
+                            <span className="ml-1.5 text-sm font-normal text-muted-foreground">
+                              {h.name}
+                            </span>
+                          ) : null}
+                        </p>
+                        <p className="mt-0.5 text-sm text-muted-foreground">
+                          {h.quantity.toLocaleString("es-AR")} × {formatARS(h.price)} ·{" "}
+                          {KIND_LABELS[h.kind]}
+                        </p>
+                      </div>
+                      <div className="shrink-0 text-right">
+                        <p className="font-medium tabular-nums">{fmt(h.valor)}</p>
+                        <p
+                          className={cn(
+                            "text-sm tabular-nums",
+                            h.sinPrecio
+                              ? "text-muted-foreground"
+                              : h.ganancia >= 0
+                                ? "text-positive"
+                                : "text-negative",
+                          )}
+                        >
+                          {h.sinPrecio
+                            ? "sin cotización"
+                            : `${h.gananciaPct >= 0 ? "+" : ""}${h.gananciaPct.toFixed(1)}%`}
+                        </p>
+                      </div>
+                    </div>
+
+                    <button
+                      onClick={() => setToDelete(h)}
+                      aria-label={`Borrar ${h.ticker}`}
+                      className="mt-3 flex items-center gap-1.5 text-xs text-muted-foreground transition-colors hover:text-negative"
+                    >
+                      <Trash2 size={13} />
+                      Sacar de la cartera
+                    </button>
+                  </motion.div>
+                ))}
+              </div>
             </div>
 
             <div className="mt-5 flex gap-2">
               <button
                 onClick={() => fileRef.current?.click()}
                 disabled={leyendo}
-                className="flex flex-1 items-center justify-center gap-1.5 rounded-full border border-border py-3 text-sm font-medium transition-colors hover:bg-muted disabled:opacity-60"
+                className="flex flex-1 items-center justify-center gap-1.5 rounded-full border border-border py-3 text-sm font-medium transition-colors hover:bg-muted disabled:opacity-60 lg:max-w-xs"
               >
                 <Camera size={15} />
                 {leyendo ? "Leyendo…" : "Cargar con una foto"}
@@ -715,6 +751,81 @@ function PreviewImportModal({
           </button>
         </div>
       </motion.div>
+    </div>
+  );
+}
+
+// Paleta ámbar/oro (color del tier Gold), para distinguir la cartera del resto.
+const COMP_COLORES = [
+  "#F0B429",
+  "#F4A261",
+  "#E9C46A",
+  "#D97706",
+  "#FBBF24",
+  "#B45309",
+  "#94A3B8",
+];
+
+/** Dona de composición de la cartera: qué peso tiene cada activo. */
+function Composicion({
+  valued,
+  totalValor,
+}: {
+  valued: ValuedHolding[];
+  totalValor: number;
+}) {
+  if (totalValor <= 0) return null;
+
+  const orden = [...valued].sort((a, b) => b.valor - a.valor);
+  const top = orden.slice(0, 6).map((h) => ({ name: h.ticker, value: h.valor }));
+  const resto = orden.slice(6);
+  const data = resto.length
+    ? [...top, { name: "Otros", value: resto.reduce((s, h) => s + h.valor, 0) }]
+    : top;
+
+  return (
+    <div className="rounded-card border border-border bg-card p-5">
+      <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+        En qué está tu plata
+      </p>
+      <div className="mx-auto h-40 w-40">
+        <ResponsiveContainer width="100%" height="100%">
+          <PieChart>
+            <Pie
+              data={data}
+              dataKey="value"
+              nameKey="name"
+              innerRadius={46}
+              outerRadius={72}
+              paddingAngle={2}
+              stroke="none"
+            >
+              {data.map((d, i) => (
+                <Cell key={d.name} fill={COMP_COLORES[i % COMP_COLORES.length]} />
+              ))}
+            </Pie>
+          </PieChart>
+        </ResponsiveContainer>
+      </div>
+      <div className="mt-4 space-y-1.5">
+        {data.map((d, i) => (
+          <div
+            key={d.name}
+            className="flex items-center justify-between text-sm"
+          >
+            <span className="flex items-center gap-2 text-muted-foreground">
+              <span
+                className="h-2.5 w-2.5 shrink-0 rounded-full"
+                style={{ background: COMP_COLORES[i % COMP_COLORES.length] }}
+              />
+              {d.name}
+            </span>
+            <span className="tabular-nums font-medium">
+              {Math.round((d.value / totalValor) * 100)}%
+            </span>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

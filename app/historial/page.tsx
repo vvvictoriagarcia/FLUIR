@@ -13,7 +13,7 @@ import { formatARS, cn } from "@/lib/utils";
 export default function HistorialPage() {
   return (
     <div className="min-h-screen pb-24 md:pl-60">
-      <div className="mx-auto max-w-xl px-5 py-6">
+      <div className="mx-auto max-w-xl px-5 py-6 lg:max-w-5xl">
         <div className="mb-6 flex items-center justify-between">
           <Link
             href="/inicio"
@@ -73,7 +73,7 @@ function HistorialContent() {
       {months.length === 0 ? (
         <EmptyState />
       ) : (
-        <div className="space-y-4">
+        <div className="grid gap-4 sm:grid-cols-2">
           {months.map((m, i) => (
             <MonthCard
               key={m.month}

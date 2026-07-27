@@ -78,7 +78,7 @@ export default function PagosPage() {
 
   return (
     <div className="min-h-screen pb-44 md:pl-60">
-      <div className="mx-auto max-w-xl px-5 py-6">
+      <div className="mx-auto max-w-xl px-5 py-6 lg:max-w-5xl">
         <div className="mb-6 flex items-center justify-between">
           <Link
             href="/inicio"
@@ -103,11 +103,11 @@ export default function PagosPage() {
           </div>
         )}
 
-        <div className="mt-5 space-y-3">
+        <div className="mt-5 grid gap-3 sm:grid-cols-2">
           {loading ? (
-            <div className="h-24 animate-pulse rounded-card bg-muted" />
+            <div className="h-24 animate-pulse rounded-card bg-muted sm:col-span-2" />
           ) : items.length === 0 ? (
-            <div className="rounded-card border border-dashed border-border p-8 text-center">
+            <div className="rounded-card border border-dashed border-border p-8 text-center sm:col-span-2">
               <CalendarClock className="mx-auto h-8 w-8 text-muted-foreground" />
               <p className="mt-3 font-medium">Todavía no cargaste ninguno</p>
               <p className="mt-1 text-sm text-muted-foreground">

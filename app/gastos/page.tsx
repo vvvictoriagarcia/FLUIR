@@ -105,7 +105,7 @@ export default function GastosPage() {
 
   return (
     <div className="min-h-screen pb-40 md:pl-60">
-      <div className="mx-auto max-w-xl px-5 py-6">
+      <div className="mx-auto max-w-xl px-5 py-6 lg:max-w-5xl">
         <div className="mb-6 flex items-center justify-between">
           <Link
             href="/inicio"
@@ -144,7 +144,7 @@ export default function GastosPage() {
                 <h2 className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                   {group.label}
                 </h2>
-                <div className="space-y-2">
+                <div className="grid gap-2 sm:grid-cols-2">
                   <AnimatePresence initial={false}>
                     {group.items.map((e) => (
                       <motion.div
