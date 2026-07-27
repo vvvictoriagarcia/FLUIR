@@ -24,6 +24,23 @@ export interface Holding {
   quantity: number;
   /** Precio promedio de compra, en pesos. */
   avgPrice: number;
+  /** "activa" mientras la tenés; "cerrada" cuando la vendiste. */
+  status?: "activa" | "cerrada";
+  /** Precio de venta por unidad (solo si está cerrada). */
+  sellPrice?: number;
+  /** Cuándo la vendiste, ISO (solo si está cerrada). */
+  soldAt?: string;
+}
+
+/** Una posición ya vendida, con la ganancia que efectivamente hiciste. */
+export interface ClosedHolding extends Holding {
+  sellPrice: number;
+  soldAt: string;
+  costo: number;
+  cobrado: number;
+  /** Ganancia realizada: lo cobrado − lo que habías puesto. */
+  ganancia: number;
+  gananciaPct: number;
 }
 
 /** La foto de precios tal como la devuelve /api/precios (ver lib/prices.ts). */
@@ -78,7 +95,7 @@ export const KIND_LABELS: Record<HoldingKind, string> = {
 };
 
 const LOCAL_KEY = "fluir_holdings";
-const COLS = "id, ticker, name, kind, quantity, avg_price";
+const COLS = "id, ticker, name, kind, quantity, avg_price, status, sell_price, sold_at";
 
 /**
  * Id del usuario logueado, o null en modo demo.
@@ -111,25 +128,77 @@ function writeLocal(items: Holding[]) {
 
 // ── Datos ──────────────────────────────────────────────────────────
 
+function mapHolding(h: Record<string, unknown>): Holding {
+  return {
+    id: h.id as string,
+    ticker: h.ticker as string,
+    name: (h.name as string) ?? "",
+    kind: ((h.kind as string) ?? "otro") as HoldingKind,
+    quantity: Number(h.quantity),
+    avgPrice: Number(h.avg_price),
+    status: (h.status as "activa" | "cerrada") ?? "activa",
+    sellPrice: h.sell_price != null ? Number(h.sell_price) : undefined,
+    soldAt: (h.sold_at as string) ?? undefined,
+  };
+}
+
+/** Solo las posiciones ACTIVAS (las que todavía tenés). */
 export async function loadHoldings(): Promise<Holding[]> {
   const uid = await getUserId();
-  if (!uid) return readLocal();
+  if (!uid) return readLocal().filter((h) => (h.status ?? "activa") !== "cerrada");
 
   const { data, error } = await createClient()
     .from("holdings")
     .select(COLS)
     .eq("user_id", uid)
+    .eq("status", "activa")
     .order("created_at");
   if (error || !data) return [];
+  return data.map(mapHolding);
+}
 
-  return data.map((h) => ({
-    id: h.id,
-    ticker: h.ticker,
-    name: h.name ?? "",
-    kind: (h.kind ?? "otro") as HoldingKind,
-    quantity: Number(h.quantity),
-    avgPrice: Number(h.avg_price),
-  }));
+/** Posiciones ya vendidas, con la ganancia realizada calculada. */
+export async function loadClosedHoldings(): Promise<ClosedHolding[]> {
+  const uid = await getUserId();
+  let cerradas: Holding[];
+  if (!uid) {
+    cerradas = readLocal().filter((h) => h.status === "cerrada");
+  } else {
+    const { data, error } = await createClient()
+      .from("holdings")
+      .select(COLS)
+      .eq("user_id", uid)
+      .eq("status", "cerrada")
+      .order("sold_at", { ascending: false });
+    if (error || !data) return [];
+    cerradas = data.map(mapHolding);
+  }
+  return cerradas
+    .filter((h) => h.sellPrice != null && h.soldAt)
+    .map((h) => valueClosed(h as Holding & { sellPrice: number; soldAt: string }));
+}
+
+/** Cierra (vende) una posición: guarda precio y fecha de venta. */
+export async function closeHolding(
+  id: string,
+  sellPrice: number,
+  soldAt: string,
+): Promise<void> {
+  const uid = await getUserId();
+  if (!uid) {
+    const items = readLocal().map((h) =>
+      h.id === id
+        ? { ...h, status: "cerrada" as const, sellPrice, soldAt }
+        : h,
+    );
+    writeLocal(items);
+    return;
+  }
+  const { error } = await createClient()
+    .from("holdings")
+    .update({ status: "cerrada", sell_price: sellPrice, sold_at: soldAt })
+    .eq("id", id);
+  if (error) throw new Error(error.message);
 }
 
 export async function createHolding(input: Omit<Holding, "id">): Promise<Holding> {
@@ -247,6 +316,28 @@ export function totals(valued: ValuedHolding[]): PortfolioTotals {
     gananciaPct: costo > 0 ? (ganancia / costo) * 100 : 0,
     sinPrecio: valued.filter((v) => v.sinPrecio).length,
   };
+}
+
+/** Calcula la ganancia realizada de una posición vendida. */
+export function valueClosed(
+  h: Holding & { sellPrice: number; soldAt: string },
+): ClosedHolding {
+  const lamina = LAMINA[h.kind] ?? 1;
+  const costo = (h.quantity * h.avgPrice) / lamina;
+  const cobrado = (h.quantity * h.sellPrice) / lamina;
+  const ganancia = cobrado - costo;
+  return {
+    ...h,
+    costo,
+    cobrado,
+    ganancia,
+    gananciaPct: costo > 0 ? (ganancia / costo) * 100 : 0,
+  };
+}
+
+/** Suma de todas las ganancias realizadas (lo que "hiciste" vendiendo). */
+export function realizedTotal(closed: ClosedHolding[]): number {
+  return closed.reduce((s, c) => s + c.ganancia, 0);
 }
 
 /** Pasa un monto en pesos a dólares MEP (0 si no tenemos cotización). */

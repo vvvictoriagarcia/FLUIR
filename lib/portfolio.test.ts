@@ -1,5 +1,13 @@
 import { describe, it, expect } from "vitest";
-import { valuate, totals, aDolares, type Holding, type Prices } from "./portfolio";
+import {
+  valuate,
+  totals,
+  aDolares,
+  valueClosed,
+  realizedTotal,
+  type Holding,
+  type Prices,
+} from "./portfolio";
 
 const prices: Prices = {
   dolar: { oficial: 1505, blue: 1555, mep: 1500, ccl: 1573 },
@@ -114,5 +122,37 @@ describe("bonos: precio por lámina de 100 nominales", () => {
   it("una acción sigue multiplicándose directo", () => {
     const [v] = valuate([{ ...bono, kind: "accion", ticker: "GGAL", quantity: 150, avgPrice: 7120 }], prices);
     expect(v.costo).toBe(1068000);
+  });
+});
+
+describe("valueClosed / realizedTotal — cerrar posiciones", () => {
+  it("ganancia realizada = cobrado − costo", () => {
+    const c = valueClosed({
+      id: "1", ticker: "AAPL", name: "Apple", kind: "cedear",
+      quantity: 10, avgPrice: 20000, sellPrice: 25000, soldAt: "2026-07-27T00:00:00Z",
+    });
+    expect(c.costo).toBe(200000);
+    expect(c.cobrado).toBe(250000);
+    expect(c.ganancia).toBe(50000);
+    expect(c.gananciaPct).toBeCloseTo(25);
+  });
+
+  it("respeta la lámina de 100 en bonos", () => {
+    const c = valueClosed({
+      id: "b", ticker: "AL30", name: "Bonar", kind: "bono",
+      quantity: 500, avgPrice: 78500, sellPrice: 90000, soldAt: "2026-07-27T00:00:00Z",
+    });
+    expect(c.costo).toBe(392500);
+    expect(c.cobrado).toBe(450000);
+    expect(c.ganancia).toBe(57500);
+  });
+
+  it("suma todas las realizadas, incluidas pérdidas", () => {
+    const base = { name: "", quantity: 1, soldAt: "2026-07-27T00:00:00Z" } as const;
+    const total = realizedTotal([
+      valueClosed({ ...base, id: "1", ticker: "A", kind: "accion", avgPrice: 100, sellPrice: 150 }),
+      valueClosed({ ...base, id: "2", ticker: "B", kind: "accion", avgPrice: 200, sellPrice: 120 }),
+    ]);
+    expect(total).toBe(50 + -80);
   });
 });

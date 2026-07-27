@@ -9,6 +9,7 @@ import {
   Plus,
   Camera,
   Trash2,
+  Tag,
   RotateCw,
   TrendingUp,
   HelpCircle,
@@ -19,17 +20,21 @@ import { PlanGate } from "@/components/gates/plan-gate";
 import { useToast } from "@/components/toast";
 import {
   loadHoldings,
+  loadClosedHoldings,
   createHolding,
   deleteHolding,
+  closeHolding,
   fetchPrices,
   valuate,
   totals,
+  realizedTotal,
   aDolares,
   KIND_LABELS,
   type Holding,
   type HoldingKind,
   type Prices,
   type ValuedHolding,
+  type ClosedHolding,
 } from "@/lib/portfolio";
 import { DISCLAIMER } from "@/lib/invest/content";
 import { ageLabel } from "@/lib/prices";
@@ -56,6 +61,7 @@ function Cartera() {
   const fileRef = useRef<HTMLInputElement>(null);
 
   const [holdings, setHoldings] = useState<Holding[]>([]);
+  const [closed, setClosed] = useState<ClosedHolding[]>([]);
   const [prices, setPrices] = useState<Prices | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -63,11 +69,16 @@ function Cartera() {
   const [openNew, setOpenNew] = useState(false);
   const [leyendo, setLeyendo] = useState(false);
   const [toDelete, setToDelete] = useState<ValuedHolding | null>(null);
+  const [toSell, setToSell] = useState<ValuedHolding | null>(null);
   const [preview, setPreview] = useState<Omit<Holding, "id">[] | null>(null);
 
   const refresh = useCallback(async (force = false) => {
-    const list = await loadHoldings();
+    const [list, cerradas] = await Promise.all([
+      loadHoldings(),
+      loadClosedHoldings(),
+    ]);
     setHoldings(list);
+    setClosed(cerradas);
     // Pedimos SOLO los tickers que tiene, no el mercado entero.
     setPrices(await fetchPrices(list.map((h) => h.ticker), force));
   }, []);
@@ -76,10 +87,14 @@ function Cartera() {
     let activo = true;
     (async () => {
       try {
-        const list = await loadHoldings();
+        const [list, cerradas] = await Promise.all([
+          loadHoldings(),
+          loadClosedHoldings(),
+        ]);
         const p = await fetchPrices(list.map((h) => h.ticker));
         if (!activo) return;
         setHoldings(list);
+        setClosed(cerradas);
         setPrices(p);
       } catch {
         if (activo) toast("No pudimos cargar tu cartera.", "error");
@@ -184,6 +199,19 @@ function Cartera() {
     }
   }
 
+  async function handleSell(sellPrice: number, soldAt: string) {
+    if (!toSell) return;
+    try {
+      await closeHolding(toSell.id, sellPrice, soldAt);
+      await refresh();
+      toast(`Vendiste ${toSell.ticker}. Lo sumamos a tu ganancia realizada.`);
+    } catch {
+      toast("No pudimos registrar la venta.", "error");
+    } finally {
+      setToSell(null);
+    }
+  }
+
   const valued = valuate(holdings, prices);
   const t = totals(valued);
   const edad = ageLabel(prices?.asOf ?? null);
@@ -229,10 +257,12 @@ function Cartera() {
 
         {loading ? (
           <div className="mt-5 h-32 animate-pulse rounded-card bg-muted" />
-        ) : holdings.length === 0 ? (
+        ) : holdings.length === 0 && closed.length === 0 ? (
           <EmptyState onAdd={() => setOpenNew(true)} onFoto={() => fileRef.current?.click()} leyendo={leyendo} />
         ) : (
           <>
+            {holdings.length > 0 && (
+            <>
             {/* Fila de métricas de la cartera */}
             <div className="mt-5 grid grid-cols-2 gap-3 lg:grid-cols-4 lg:gap-4">
               <div className="rounded-card border border-border bg-card p-4">
@@ -358,20 +388,88 @@ function Cartera() {
                       </div>
                     </div>
 
-                    <button
-                      onClick={() => setToDelete(h)}
-                      aria-label={`Borrar ${h.ticker}`}
-                      className="mt-3 flex items-center gap-1.5 text-xs text-muted-foreground transition-colors hover:text-negative"
-                    >
-                      <Trash2 size={13} />
-                      Sacar de la cartera
-                    </button>
+                    <div className="mt-3 flex items-center gap-4">
+                      <button
+                        onClick={() => setToSell(h)}
+                        className="flex items-center gap-1.5 text-xs font-medium text-brand transition-opacity hover:opacity-80"
+                      >
+                        <Tag size={13} />
+                        Vendí
+                      </button>
+                      <button
+                        onClick={() => setToDelete(h)}
+                        aria-label={`Borrar ${h.ticker}`}
+                        className="flex items-center gap-1.5 text-xs text-muted-foreground transition-colors hover:text-negative"
+                      >
+                        <Trash2 size={13} />
+                        Sacar
+                      </button>
+                    </div>
                   </motion.div>
                 ))}
               </div>
             </div>
+            </>
+            )}
 
-            <div className="mt-5 flex gap-2">
+            {/* Posiciones cerradas — la ganancia que YA hiciste */}
+            {closed.length > 0 && (
+              <div className="mt-8">
+                <div className="mb-3 flex items-center justify-between">
+                  <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                    Posiciones cerradas
+                  </h2>
+                  <span
+                    className={cn(
+                      "text-sm font-medium tabular-nums",
+                      realizedTotal(closed) >= 0 ? "text-positive" : "text-negative",
+                    )}
+                  >
+                    {realizedTotal(closed) >= 0 ? "+" : "−"}
+                    {fmt(Math.abs(realizedTotal(closed)))} realizado
+                  </span>
+                </div>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  {closed.map((c) => (
+                    <div
+                      key={c.id}
+                      className="rounded-card border border-border bg-card p-4"
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <p className="truncate font-medium">
+                            {c.ticker}
+                            {c.name ? (
+                              <span className="ml-1.5 text-sm font-normal text-muted-foreground">
+                                {c.name}
+                              </span>
+                            ) : null}
+                          </p>
+                          <p className="mt-0.5 text-sm text-muted-foreground">
+                            Vendida a {formatARS(c.sellPrice)} ·{" "}
+                            {new Date(c.soldAt).toLocaleDateString("es-AR")}
+                          </p>
+                        </div>
+                        <div className="shrink-0 text-right">
+                          <p className="font-medium tabular-nums">{fmt(c.cobrado)}</p>
+                          <p
+                            className={cn(
+                              "text-sm tabular-nums",
+                              c.ganancia >= 0 ? "text-positive" : "text-negative",
+                            )}
+                          >
+                            {c.ganancia >= 0 ? "+" : ""}
+                            {c.gananciaPct.toFixed(1)}%
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div className="mt-6 flex gap-2">
               <button
                 onClick={() => fileRef.current?.click()}
                 disabled={leyendo}
@@ -432,6 +530,14 @@ function Cartera() {
           confirmLabel="Sacar"
           onConfirm={handleDelete}
           onCancel={() => setToDelete(null)}
+        />
+      )}
+
+      {toSell && (
+        <SellModal
+          holding={toSell}
+          onClose={() => setToSell(null)}
+          onConfirm={handleSell}
         />
       )}
 
@@ -826,6 +932,120 @@ function Composicion({
           </div>
         ))}
       </div>
+    </div>
+  );
+}
+
+/** Modal para registrar la venta de una posición: precio y fecha. */
+function SellModal({
+  holding,
+  onClose,
+  onConfirm,
+}: {
+  holding: ValuedHolding;
+  onClose: () => void;
+  onConfirm: (sellPrice: number, soldAt: string) => Promise<void>;
+}) {
+  const toast = useToast();
+  // Prellenamos con el precio actual de mercado como sugerencia.
+  const [precio, setPrecio] = useState(
+    holding.sinPrecio ? "" : String(Math.round(holding.price)),
+  );
+  const hoy = new Date().toISOString().slice(0, 10);
+  const [fecha, setFecha] = useState(hoy);
+  const [guardando, setGuardando] = useState(false);
+
+  const sellPrice = Number(precio.replace(/[^\d.,]/g, "").replace(",", "."));
+  const lamina = holding.kind === "bono" ? 100 : 1;
+  const ganancia =
+    sellPrice > 0
+      ? (holding.quantity * (sellPrice - holding.avgPrice)) / lamina
+      : 0;
+
+  async function save() {
+    if (!sellPrice || sellPrice <= 0) {
+      toast("Poné el precio al que vendiste.", "error");
+      return;
+    }
+    setGuardando(true);
+    try {
+      await onConfirm(sellPrice, new Date(fecha).toISOString());
+    } finally {
+      setGuardando(false);
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 sm:items-center">
+      <motion.div
+        initial={{ opacity: 0, y: 40 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.25 }}
+        className="w-full max-w-md rounded-t-3xl border border-border bg-card p-5 sm:rounded-3xl"
+      >
+        <h2 className="font-display text-xl font-semibold">
+          Vendiste {holding.ticker}
+        </h2>
+        <p className="mt-1 text-sm text-muted-foreground">
+          {holding.quantity.toLocaleString("es-AR")} unidades · las compraste a{" "}
+          {formatARS(holding.avgPrice)}
+        </p>
+
+        <div className="mt-4 grid grid-cols-2 gap-3">
+          <label className="block">
+            <span className="text-sm text-muted-foreground">Precio de venta</span>
+            <input
+              autoFocus
+              inputMode="decimal"
+              value={precio}
+              onChange={(e) => setPrecio(e.target.value.replace(/[^\d.,]/g, ""))}
+              placeholder="0"
+              className="mt-1 w-full rounded-2xl border-2 border-border bg-background px-4 py-3 text-sm tabular-nums outline-none transition-colors focus:border-gold"
+            />
+          </label>
+          <label className="block">
+            <span className="text-sm text-muted-foreground">¿Cuándo?</span>
+            <input
+              type="date"
+              value={fecha}
+              max={hoy}
+              onChange={(e) => setFecha(e.target.value)}
+              className="mt-1 w-full rounded-2xl border-2 border-border bg-background px-4 py-3 text-sm outline-none transition-colors focus:border-gold"
+            />
+          </label>
+        </div>
+
+        {sellPrice > 0 && (
+          <p className="mt-3 text-sm text-muted-foreground">
+            Ganancia realizada:{" "}
+            <span
+              className={cn(
+                "font-medium tabular-nums",
+                ganancia >= 0 ? "text-positive" : "text-negative",
+              )}
+            >
+              {ganancia >= 0 ? "+" : "−"}
+              {formatARS(Math.abs(ganancia))}
+            </span>
+          </p>
+        )}
+
+        <div className="mt-5 flex gap-2">
+          <button
+            onClick={onClose}
+            className="flex-1 rounded-full border border-border py-3 text-sm font-medium transition-colors hover:bg-muted"
+          >
+            Cancelar
+          </button>
+          <button
+            onClick={save}
+            disabled={guardando}
+            className="flex-1 rounded-full bg-gold py-3 text-sm font-medium text-gold-foreground transition-opacity hover:opacity-90 disabled:opacity-60"
+          >
+            {guardando ? "Guardando…" : "Registrar venta"}
+          </button>
+        </div>
+      </motion.div>
     </div>
   );
 }
