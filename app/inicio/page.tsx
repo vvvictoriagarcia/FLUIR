@@ -470,11 +470,11 @@ function Kpi({
         ? "text-negative"
         : "";
   return (
-    <div className="rounded-card border border-border bg-card p-3">
+    <div className="rounded-card border border-border bg-card p-4">
       <p className="text-xs text-muted-foreground">{label}</p>
       <AnimatedNumber
         value={value}
-        className={`mt-1 block text-base font-semibold tabular-nums ${color}`}
+        className={`mt-1 block text-xl font-semibold tabular-nums ${color}`}
       />
       {trend && (
         <p

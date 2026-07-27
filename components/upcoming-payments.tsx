@@ -45,7 +45,7 @@ export function UpcomingPayments() {
     return (
       <Link
         href="/pagos"
-        className="mt-4 flex items-center gap-3 rounded-card border border-border bg-card p-4 transition-colors hover:bg-muted"
+        className="flex items-center gap-3 rounded-card border border-border bg-card p-4 transition-colors hover:bg-muted"
       >
         <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand/10 text-brand">
           <CalendarClock size={18} />
@@ -65,7 +65,7 @@ export function UpcomingPayments() {
     return (
       <Link
         href="/pagos"
-        className="mt-4 flex items-center gap-3 rounded-card border border-positive/30 bg-positive/5 p-4"
+        className="flex items-center gap-3 rounded-card border border-positive/30 bg-positive/5 p-4"
       >
         <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-positive/15 text-positive">
           <CalendarClock size={18} />
@@ -84,7 +84,7 @@ export function UpcomingPayments() {
   const total = pendientes.reduce((s, p) => s + p.amount, 0);
 
   return (
-    <div className="mt-4 overflow-hidden rounded-card border border-border bg-card">
+    <div className="overflow-hidden rounded-card border border-border bg-card">
       <div className="flex items-center justify-between px-4 pt-4">
         <span className="text-sm font-medium">Lo que se viene</span>
         <Link href="/pagos" className="text-xs font-medium text-brand">

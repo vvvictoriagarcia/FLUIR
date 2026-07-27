@@ -56,7 +56,7 @@ export function PortfolioCard() {
     return (
       <Link
         href="/invertir/cartera"
-        className="mt-4 flex items-center gap-3 rounded-card border border-gold/40 bg-gold/10 p-4 transition-colors hover:bg-gold/15"
+        className="flex items-center gap-3 rounded-card border border-gold/40 bg-gold/10 p-4 transition-colors hover:bg-gold/15"
       >
         <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gold/20 text-gold">
           <TrendingUp size={18} />
@@ -88,7 +88,7 @@ export function PortfolioCard() {
   return (
     <Link
       href="/invertir/cartera"
-      className="mt-4 block rounded-card border border-gold/40 bg-gold/5 p-4 transition-colors hover:bg-gold/10"
+      className="block rounded-card border border-gold/40 bg-gold/5 p-4 transition-colors hover:bg-gold/10"
     >
       <div className="flex items-center justify-between">
         <span className="flex items-center gap-1.5 text-sm font-medium">
