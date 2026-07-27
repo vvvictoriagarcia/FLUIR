@@ -8,10 +8,10 @@
 // Voz: la misma de la app — cercana, voseo, sin culpa, frases cortas.
 // ─────────────────────────────────────────────────────────────────
 
-const BRAND = "#6C63FF";
-const INK = "#1a1a1a";
-const MUTED = "#6b7280";
-const BG = "#f8f5ef";
+const BRAND = "#2450e0";
+const INK = "#0f1b2d";
+const MUTED = "#566579";
+const BG = "#f5f8fb";
 
 const SITE = process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") ?? "https://fluirargentina.com";
 

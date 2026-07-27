@@ -14,12 +14,13 @@ presupuesto en <3 min, trackea gastos, y en el tier Gold gestiona inversiones.
 - **Mercado Pago** — suscripciones (Fase 2) · **Claude API** + **n8n** — insights/logros/precios
 - Deploy: **Vercel**
 
-## Identidad visual
+## Identidad visual — banca institucional (seria, formal, confiable)
 
-- Brand violeta `#6C63FF` · Gold ámbar `#F0B429` (SOLO elementos del tier Gold)
-- Positivo `#3EBD8F` · Negativo `#E05C5C`
-- Fondo dark `#111009` (no negro) · Fondo light `#F8F5EF` (arena)
-- Fuentes: **Fraunces** (display) + **Inter** (UI/números)
+- Brand azul de confianza `#2450E0` · Gold `#B8862B` (SOLO elementos del tier Gold)
+- Positivo `#0E9F6E` · Negativo `#D64545` · Warning ámbar `#CF7A1C` (alerta presupuesto, ≠ gold)
+- Fondo light hueso frío `#F5F8FB` · Fondo dark navy profundo `#0A1120` (no negro)
+- Radio de card `0.625rem` (definido, no "burbuja") · sombras sobrias con tinte navy
+- Fuentes: **Fraunces** (display, con itálica para acentuar palabras) + **Inter** (UI/números)
 - Mobile-first siempre. Usar tokens semánticos (`bg-brand`, `text-positive`, etc.), no hex sueltos.
 
 ## Voz del producto

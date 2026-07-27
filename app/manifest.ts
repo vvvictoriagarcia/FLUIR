@@ -7,8 +7,8 @@ export default function manifest(): MetadataRoute.Manifest {
     description: "Tu presupuesto personal en 3 minutos. Sin Excel, sin culpa.",
     start_url: "/",
     display: "standalone",
-    background_color: "#F8F5EF",
-    theme_color: "#6C63FF",
+    background_color: "#f5f8fb",
+    theme_color: "#2450e0",
     icons: [
       { src: "/icon.svg", sizes: "any", type: "image/svg+xml", purpose: "any" },
       { src: "/icon.svg", sizes: "any", type: "image/svg+xml", purpose: "maskable" },

@@ -3,19 +3,20 @@
 import { PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
 import type { BudgetCategory } from "@/lib/calculators/budget";
 
+// Paleta categórica sobria, anclada en el azul institucional (sin violetas).
 const COLORS: Record<string, string> = {
-  Vivienda: "#6C63FF",
-  Comida: "#3EBD8F",
-  Salidas: "#F0B429",
-  Transporte: "#E05C5C",
-  Ropa: "#885CF6",
-  Suscripciones: "#38BDF8",
-  Deuda: "#F97316",
-  Ahorro: "#34D399",
-  Otros: "#94A3B8",
+  Vivienda: "#2450e0", // azul de marca — suele ser la categoría más grande
+  Comida: "#0e9f6e",
+  Salidas: "#b8862b",
+  Transporte: "#d64545",
+  Ropa: "#6e93ff",
+  Suscripciones: "#0ea5b7",
+  Deuda: "#cf7a1c",
+  Ahorro: "#34d399",
+  Otros: "#94a3b8",
 };
 
-const colorFor = (name: string) => COLORS[name] ?? "#94A3B8";
+const colorFor = (name: string) => COLORS[name] ?? "#94a3b8";
 
 export function BudgetDonut({ categories }: { categories: BudgetCategory[] }) {
   const data = categories

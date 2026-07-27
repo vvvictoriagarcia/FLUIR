@@ -5,49 +5,51 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 /* ───────────────────────────────────────────────
-   Tokens de Fluir — modo claro (arena suave)
+   Tokens de Fluir — modo claro (banca institucional)
+   Hueso frío + tinta navy + un azul de confianza.
+   Serio y formal, pero limpio y moderno (no acartonado).
    ─────────────────────────────────────────────── */
 :root {
-  --background: #f8f5ef; /* arena suave */
-  --foreground: #1a1a2e;
+  --background: #f5f8fb; /* hueso frío, casi blanco */
+  --foreground: #0f1b2d; /* tinta azul-marino profunda */
   --card: #ffffff;
-  --card-foreground: #1a1a2e;
-  --muted: #ece7dd;
-  --muted-foreground: #6b6b7b;
-  --border: #e3ddd0;
-  --input: #e3ddd0;
+  --card-foreground: #0f1b2d;
+  --muted: #eaf0f6;
+  --muted-foreground: #566579; /* pizarra */
+  --border: #dbe3ec;
+  --input: #dbe3ec;
 
-  --brand: #6c63ff; /* violeta — acento principal */
+  --brand: #2450e0; /* azul confianza — acento único y sobrio */
   --brand-foreground: #ffffff;
-  --gold: #f0b429; /* exclusivo tier Gold */
-  --gold-foreground: #1a1a2e;
-  --positive: #3ebd8f; /* ganancia, superávit */
-  --negative: #e05c5c; /* pérdida, gasto excedido */
-  --warning: #e0872e; /* alerta de presupuesto (ámbar cálido, NO es el gold) */
+  --gold: #b8862b; /* exclusivo tier Gold, oro sobrio */
+  --gold-foreground: #ffffff;
+  --positive: #0e9f6e; /* ganancia, superávit — verde contenido */
+  --negative: #d64545; /* pérdida, gasto excedido */
+  --warning: #cf7a1c; /* alerta de presupuesto (ámbar, NO es el gold) */
 
-  --radius: 1rem;
+  --radius: 0.625rem; /* más definido, menos "burbuja" */
 }
 
 /* ───────────────────────────────────────────────
-   Tokens de Fluir — modo oscuro (gris cálido, OLED-safe)
+   Tokens de Fluir — modo oscuro (navy profundo, no negro)
    ─────────────────────────────────────────────── */
 .dark {
-  --background: #111009; /* no negro absoluto */
-  --foreground: #ede9e0; /* nunca blanco puro */
-  --card: #1b1a12;
-  --card-foreground: #ede9e0;
-  --muted: #26241a;
-  --muted-foreground: #a8a294;
-  --border: #2e2b20;
-  --input: #2e2b20;
+  --background: #0a1120; /* navy muy profundo, no negro */
+  --foreground: #e6edf5; /* nunca blanco puro */
+  --card: #111c30;
+  --card-foreground: #e6edf5;
+  --muted: #17233a;
+  --muted-foreground: #8b9aad;
+  --border: #26344b;
+  --input: #26344b;
 
-  --brand: #8b83ff; /* un toque más brillante sobre fondo oscuro */
+  --brand: #6e93ff; /* azul más claro sobre fondo oscuro */
   --brand-foreground: #ffffff;
-  --gold: #f0b429;
-  --gold-foreground: #1a1a2e;
-  --positive: #3ebd8f;
-  --negative: #e05c5c;
-  --warning: #eb9740;
+  --gold: #d8a441;
+  --gold-foreground: #17130a;
+  --positive: #34d399;
+  --negative: #f2777a;
+  --warning: #e0a13a;
 }
 
 /* ───────────────────────────────────────────────
@@ -85,16 +87,46 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+/* ── Detalles de tipografía: prolijidad que se siente sin verse ── */
+/* Fraunces cambia su forma según el tamaño (optical sizing): que lo use. */
+.font-display {
+  font-optical-sizing: auto;
+}
+/* Títulos cortos: que no quede una palabra suelta colgando en la última línea. */
+h1,
+h2,
+h3 {
+  text-wrap: balance;
+}
+/* Párrafos: evita "ríos" y líneas viudas. */
+p {
+  text-wrap: pretty;
+}
+/* Selección con el violeta de la marca, no el celeste del sistema. */
+::selection {
+  background: color-mix(in srgb, var(--brand) 22%, transparent);
+}
+
+/* ── Resplandor cálido detrás del hero: da profundidad sin ser un
+   "lavado" violeta de plantilla. Muy sutil, apoyado en el fondo arena. ── */
+.hero-glow {
+  background: radial-gradient(
+    58% 52% at 50% -8%,
+    color-mix(in srgb, var(--brand) 13%, transparent),
+    transparent 72%
+  );
+}
+
 /* ── Profundidad: sombra suave en las cards (eleva la sensación) ── */
 .rounded-card {
   box-shadow:
-    0 1px 2px rgba(17, 16, 9, 0.04),
-    0 4px 12px rgba(17, 16, 9, 0.04);
+    0 1px 2px rgba(15, 27, 45, 0.05),
+    0 1px 3px rgba(15, 27, 45, 0.04);
 }
 .dark .rounded-card {
   box-shadow:
-    0 1px 2px rgba(0, 0, 0, 0.3),
-    0 4px 14px rgba(0, 0, 0, 0.25);
+    0 1px 2px rgba(0, 0, 0, 0.4),
+    0 2px 8px rgba(0, 0, 0, 0.28);
 }
 
 /* ── Foco accesible y prolijo en elementos interactivos ── */

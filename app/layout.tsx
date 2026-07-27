@@ -4,10 +4,13 @@ import "./globals.css";
 import { ToastProvider } from "@/components/toast";
 import { siteUrl } from "@/lib/utils";
 
-// Display / títulos — serif variable, editorial, con carácter
+// Display / títulos — serif variable, editorial, con carácter.
+// Cargamos la itálica: la usamos para acentuar palabras en los títulos
+// (ese detalle, en vez de un degradé, es lo que le da carácter propio).
 const fraunces = Fraunces({
   variable: "--font-fraunces",
   subsets: ["latin"],
+  style: ["normal", "italic"],
   display: "swap",
 });
 
@@ -48,7 +51,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#6C63FF",
+  themeColor: "#2450e0",
 };
 
 // Aplica el tema guardado antes del primer pintado para evitar el flash de color.

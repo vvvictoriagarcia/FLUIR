@@ -18,7 +18,7 @@ export default function OpengraphImage() {
           display: "flex",
           flexDirection: "column",
           justifyContent: "space-between",
-          background: "#111009",
+          background: "#0a1120",
           padding: 80,
           fontFamily: "sans-serif",
         }}
@@ -28,8 +28,8 @@ export default function OpengraphImage() {
             style={{
               width: 64,
               height: 64,
-              borderRadius: 20,
-              background: "#6C63FF",
+              borderRadius: 14,
+              background: "#2450e0",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
@@ -40,7 +40,7 @@ export default function OpengraphImage() {
           >
             f
           </div>
-          <div style={{ fontSize: 44, fontWeight: 600, color: "#6C63FF" }}>
+          <div style={{ fontSize: 44, fontWeight: 600, color: "#6e93ff" }}>
             fluir
           </div>
         </div>
@@ -50,14 +50,14 @@ export default function OpengraphImage() {
             style={{
               fontSize: 86,
               fontWeight: 700,
-              color: "#F8F5EF",
+              color: "#e6edf5",
               lineHeight: 1.05,
               letterSpacing: -2,
             }}
           >
             Tu plata, en orden
           </div>
-          <div style={{ fontSize: 38, color: "#A8A29A", lineHeight: 1.3 }}>
+          <div style={{ fontSize: 38, color: "#8b9aad", lineHeight: 1.3 }}>
             Tu presupuesto personal en 3 minutos. Sin Excel, sin fórmulas.
           </div>
         </div>
@@ -68,8 +68,8 @@ export default function OpengraphImage() {
               key={t}
               style={{
                 fontSize: 26,
-                color: "#F8F5EF",
-                border: "2px solid #35342E",
+                color: "#e6edf5",
+                border: "2px solid #26344b",
                 borderRadius: 999,
                 padding: "10px 26px",
               }}
