@@ -2,7 +2,18 @@
 
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { ArrowRight, Sparkles, Target, Zap, LineChart, Camera } from "lucide-react";
+import {
+  ArrowRight,
+  Sparkles,
+  Target,
+  Zap,
+  LineChart,
+  Camera,
+  Eye,
+  Heart,
+  Sprout,
+  GraduationCap,
+} from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { useUser } from "@/hooks/useUser";
 import { WHATSAPP_DISPLAY, whatsapp } from "@/lib/contact";
@@ -64,6 +75,42 @@ const PLANES = [
     price: "$9.000",
     detail: "por mes",
     features: ["Todo lo de Pro", "Guía para empezar a invertir", "Seguimiento de tu cartera"],
+  },
+];
+
+const PILARES = [
+  {
+    icon: Eye,
+    title: "Claridad, no planillas",
+    desc: "Ver tu plata de un vistazo, en criollo. Nada de Excel ni términos que no entendés.",
+  },
+  {
+    icon: Heart,
+    title: "Sin culpa",
+    desc: "No te retamos por gastar. Te mostramos cómo venís para que decidas vos, tranqui.",
+  },
+  {
+    icon: Sprout,
+    title: "Pequeños hábitos",
+    desc: "Un cambio chico por vez. Así se llega a estar de verdad tranquilo con la plata.",
+  },
+];
+
+const HABITOS = [
+  {
+    n: "01",
+    title: "Anotá un gasto por día",
+    desc: "El hábito más chico que lo cambia todo. Con una foto del ticket alcanza.",
+  },
+  {
+    n: "02",
+    title: "Guardá primero, gastá después",
+    desc: "Apartá tu ahorro apenas cobrás, no con lo que sobra a fin de mes.",
+  },
+  {
+    n: "03",
+    title: "Mirá a dónde se te va",
+    desc: "Dos minutos por semana. Enterarte es el 80% del cambio.",
   },
 ];
 
@@ -199,6 +246,75 @@ export default function Landing() {
               <p className="mt-1.5 text-sm text-muted-foreground">{f.desc}</p>
             </motion.div>
           ))}
+        </div>
+      </section>
+
+      {/* Quiénes somos / misión */}
+      <section className="border-y border-border bg-card/40 px-6 py-16">
+        <div className="mx-auto max-w-4xl">
+          <div className="mx-auto max-w-2xl text-center">
+            <span className="text-xs font-semibold uppercase tracking-wider text-brand">
+              Nuestra misión
+            </span>
+            <h2 className="mt-2 font-display text-3xl font-semibold tracking-tight sm:text-4xl">
+              Que tu plata deje de ser un dolor de cabeza
+            </h2>
+            <p className="mt-4 text-lg text-muted-foreground">
+              En Argentina, cuidar la plata cansa. Fluir nació para que
+              cualquiera —sepa o no de finanzas— entienda en qué está parado y
+              tome mejores decisiones, sin estrés y sin culpa. No queremos que
+              ahorres por ahorrar: queremos que vivas más tranquilo con lo que
+              tenés.
+            </p>
+          </div>
+
+          <div className="mt-10 grid gap-4 sm:grid-cols-3">
+            {PILARES.map((p) => (
+              <div key={p.title} className="rounded-card border border-border bg-card p-6">
+                <div className="mb-4 inline-flex h-10 w-10 items-center justify-center rounded-xl bg-brand/10 text-brand">
+                  <p.icon className="h-5 w-5" />
+                </div>
+                <h3 className="font-semibold">{p.title}</h3>
+                <p className="mt-1.5 text-sm text-muted-foreground">{p.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Educación financiera — de a poco, en hábitos */}
+      <section className="mx-auto max-w-4xl px-6 py-16">
+        <div className="mx-auto max-w-2xl text-center">
+          <span className="text-xs font-semibold uppercase tracking-wider text-brand">
+            Aprendé de a poco
+          </span>
+          <h2 className="mt-2 font-display text-3xl font-semibold tracking-tight sm:text-4xl">
+            Pequeños hábitos, gran cambio
+          </h2>
+          <p className="mt-4 text-lg text-muted-foreground">
+            No hace falta volverse experto. Con tres hábitos simples ya empezás
+            a estar más tranquilo con tu plata. Fluir te acompaña en cada uno.
+          </p>
+        </div>
+
+        <div className="mt-10 grid gap-4 sm:grid-cols-3">
+          {HABITOS.map((h) => (
+            <div key={h.n} className="rounded-card border border-border bg-card p-6">
+              <span className="font-display text-2xl font-semibold text-brand/40">
+                {h.n}
+              </span>
+              <h3 className="mt-2 font-semibold">{h.title}</h3>
+              <p className="mt-1.5 text-sm text-muted-foreground">{h.desc}</p>
+            </div>
+          ))}
+        </div>
+
+        <div className="mt-8 flex items-center justify-center gap-3 rounded-card border border-dashed border-brand/40 bg-brand/5 px-5 py-4 text-center">
+          <GraduationCap className="h-5 w-5 shrink-0 text-brand" />
+          <p className="text-sm text-muted-foreground">
+            <span className="font-medium text-foreground">Próximamente:</span>{" "}
+            cursos cortos y guías para entender tu plata sin vueltas.
+          </p>
         </div>
       </section>
 

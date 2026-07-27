@@ -25,9 +25,14 @@ export function ExpenseModal({
     initial?.category ?? categories[0] ?? "Otros"
   );
   const [description, setDescription] = useState(initial?.description ?? "");
+  // "Otro": crear una categoría al toque, sin salir del modal.
+  const [otroMode, setOtroMode] = useState(false);
+  const [otro, setOtro] = useState("");
 
   const amountNumber = Number(amount.replace(/\D/g, ""));
-  const valid = amountNumber > 0;
+  // La categoría que se guarda: la nueva si está en modo "Otro", si no la elegida.
+  const categoriaFinal = otroMode ? otro.trim() : category;
+  const valid = amountNumber > 0 && categoriaFinal.length > 0;
 
   return (
     <>
@@ -74,9 +79,12 @@ export function ExpenseModal({
           {categories.map((c) => (
             <button
               key={c}
-              onClick={() => setCategory(c)}
+              onClick={() => {
+                setCategory(c);
+                setOtroMode(false);
+              }}
               className={`rounded-full border px-3.5 py-1.5 text-sm transition-colors ${
-                category === c
+                !otroMode && category === c
                   ? "border-brand bg-brand/10 text-brand"
                   : "border-border text-muted-foreground hover:bg-muted"
               }`}
@@ -84,7 +92,27 @@ export function ExpenseModal({
               {c}
             </button>
           ))}
+          <button
+            onClick={() => setOtroMode(true)}
+            className={`rounded-full border px-3.5 py-1.5 text-sm transition-colors ${
+              otroMode
+                ? "border-brand bg-brand/10 text-brand"
+                : "border-dashed border-border text-muted-foreground hover:bg-muted"
+            }`}
+          >
+            + Otro
+          </button>
         </div>
+
+        {otroMode && (
+          <input
+            autoFocus
+            value={otro}
+            onChange={(e) => setOtro(e.target.value)}
+            placeholder="Nombre de la categoría (ej: Mascota, Salud, Regalos)"
+            className="mb-4 w-full rounded-2xl border-2 border-brand bg-card p-3.5 text-sm outline-none placeholder:text-muted-foreground/50"
+          />
+        )}
 
         <label className="text-sm text-muted-foreground">
           ¿Qué fue? (opcional)
@@ -98,7 +126,7 @@ export function ExpenseModal({
 
         <button
           disabled={!valid}
-          onClick={() => onSave(category, amountNumber, description.trim())}
+          onClick={() => onSave(categoriaFinal, amountNumber, description.trim())}
           className="w-full rounded-full bg-brand py-4 font-medium text-brand-foreground transition-opacity disabled:opacity-40"
         >
           {saveLabel}
