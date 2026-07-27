@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Receipt, Wallet, TrendingUp, User, Lock } from "lucide-react";
+import { Home, Receipt, Wallet, TrendingUp, User, Lock, HelpCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/components/toast";
 
@@ -91,11 +91,14 @@ export function BottomNav() {
           fluir
         </Link>
 
-        <div className="flex flex-col gap-1">
+        <p className="mb-2 px-3 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+          Menú
+        </p>
+        <nav className="flex flex-col gap-1">
           {ITEMS.map((item) => {
             const { active, color } = estado(item);
             const className = cn(
-              "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors",
+              "flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium transition-colors",
               active ? "bg-muted" : "hover:bg-muted/60",
               color,
             );
@@ -121,6 +124,29 @@ export function BottomNav() {
               </button>
             );
           })}
+        </nav>
+
+        {/* Bloque anclado abajo: llena el alto de la barra y da accesos útiles */}
+        <div className="mt-auto flex flex-col gap-2 border-t border-border pt-4">
+          <Link
+            href="/guia"
+            className="flex items-center gap-3 rounded-xl bg-brand/5 px-3 py-3 transition-colors hover:bg-brand/10"
+          >
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand/10 text-brand">
+              <HelpCircle size={17} />
+            </span>
+            <span className="min-w-0">
+              <span className="block text-sm font-medium text-foreground">
+                ¿Cómo funciona?
+              </span>
+              <span className="block text-xs text-muted-foreground">
+                Guía rápida de Fluir
+              </span>
+            </span>
+          </Link>
+          <p className="px-3 text-[11px] leading-relaxed text-muted-foreground">
+            Fluir · Tu plata, en orden
+          </p>
         </div>
       </aside>
     </>
