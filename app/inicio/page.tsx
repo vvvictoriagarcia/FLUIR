@@ -55,6 +55,9 @@ export default function DashboardPage() {
     let active = true;
     // Señal de actividad para las campañas de mail (best-effort, no bloquea).
     touchLastSeen().catch(() => {});
+    // Mail de bienvenida (idempotente): cubre a quien entró con Google, que no
+    // pasa por el momento de registro con email. Solo manda una vez.
+    fetch("/api/email/welcome", { method: "POST" }).catch(() => {});
     trackOnce("dashboard_viewed");
     // Migra datos del demo a la cuenta (si recién te logueaste) y luego carga.
     migrateLocalToSupabase()

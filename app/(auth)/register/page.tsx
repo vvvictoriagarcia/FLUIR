@@ -53,6 +53,8 @@ export default function RegisterPage() {
 
     // Si hay sesión, entró directo. Si no, hay que confirmar el email.
     if (data.session) {
+      // Mail de bienvenida — no bloquea el registro si falla o está apagado.
+      fetch("/api/email/welcome", { method: "POST" }).catch(() => {});
       // Migrar el presupuesto que armó como invitado (si lo hizo).
       const migrated = await migrateLocalToSupabase().catch(() => false);
       router.push(readNext(migrated ? "/inicio" : "/onboarding"));
