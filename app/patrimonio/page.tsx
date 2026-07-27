@@ -184,6 +184,15 @@ export default function PatrimonioPage() {
               </button>
             </div>
           )}
+          {/* Patrimonio total: ahorros + inversiones, para unir las dos patas */}
+          {!editando && ahorros !== null && r !== null && r.invValor > 0 && (
+            <p className="mt-4 border-t border-border pt-3 text-sm text-muted-foreground">
+              Con tus inversiones, tu patrimonio es{" "}
+              <span className="font-semibold text-foreground tabular-nums">
+                {formatARS(ahorros + r.invValor)}
+              </span>
+            </p>
+          )}
         </div>
 
         {r === null ? (
@@ -197,11 +206,14 @@ export default function PatrimonioPage() {
           </div>
         ) : (
           <>
-            {/* Fila de métricas */}
-            <div className="mt-6 grid grid-cols-2 gap-3 lg:grid-cols-4 lg:gap-4">
+            {/* Este mes — flujos del mes (entra/sale), separados del saldo */}
+            <h2 className="mt-8 mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              Este mes
+            </h2>
+            <div className="grid grid-cols-2 gap-3 lg:gap-4">
               <Metric
                 icon={PiggyBank}
-                label="Ahorro este mes"
+                label="Ahorrás este mes"
                 value={formatARS(r.ahorroMes)}
                 accent="positive"
               />
@@ -210,50 +222,53 @@ export default function PatrimonioPage() {
                 label="Gastado este mes"
                 value={formatARS(r.gastadoMes)}
               />
-              {r.tieneInversiones ? (
-                <>
-                  <Metric
-                    icon={TrendingUp}
-                    label="Invertido"
-                    value={formatARS(r.invValor)}
-                    sub={
-                      r.prices?.dolar.mep
-                        ? `US$ ${aDolares(r.invValor, r.prices).toLocaleString("es-AR", { maximumFractionDigits: 0 })}`
-                        : undefined
-                    }
-                  />
-                  <Metric
-                    icon={TrendingUp}
-                    label="Lo que generó tu plata"
-                    value={`${r.noRealizada + r.realizada >= 0 ? "+" : "−"}${formatARS(Math.abs(r.noRealizada + r.realizada))}`}
-                    accent={r.noRealizada + r.realizada >= 0 ? "positive" : "negative"}
-                    sub={
-                      r.realizada !== 0
-                        ? `${formatARS(r.realizada)} ya cobrado`
-                        : "en inversiones"
-                    }
-                  />
-                </>
-              ) : (
-                <Link
-                  href="/invertir"
-                  className="col-span-2 flex items-center gap-3 rounded-card border border-gold/40 bg-gold/10 p-4 transition-colors hover:bg-gold/15"
-                >
-                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gold/20 text-gold">
-                    <TrendingUp size={18} />
-                  </span>
-                  <div className="min-w-0">
-                    <p className="text-sm font-medium">
-                      Hacé rendir lo que te sobra
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      Empezá a invertir y seguilo desde acá
-                    </p>
-                  </div>
-                  <ArrowRight className="ml-auto h-5 w-5 shrink-0 text-muted-foreground" />
-                </Link>
-              )}
             </div>
+
+            {/* Tus inversiones */}
+            <h2 className="mt-8 mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              Tus inversiones
+            </h2>
+            {r.tieneInversiones ? (
+              <div className="grid grid-cols-2 gap-3 lg:gap-4">
+                <Metric
+                  icon={TrendingUp}
+                  label="Invertido"
+                  value={formatARS(r.invValor)}
+                  sub={
+                    r.prices?.dolar.mep
+                      ? `US$ ${aDolares(r.invValor, r.prices).toLocaleString("es-AR", { maximumFractionDigits: 0 })}`
+                      : undefined
+                  }
+                />
+                <Metric
+                  icon={TrendingUp}
+                  label="Lo que generó tu plata"
+                  value={`${r.noRealizada + r.realizada >= 0 ? "+" : "−"}${formatARS(Math.abs(r.noRealizada + r.realizada))}`}
+                  accent={r.noRealizada + r.realizada >= 0 ? "positive" : "negative"}
+                  sub={
+                    r.realizada !== 0
+                      ? `${formatARS(r.realizada)} ya cobrado`
+                      : "en inversiones"
+                  }
+                />
+              </div>
+            ) : (
+              <Link
+                href="/invertir"
+                className="flex items-center gap-3 rounded-card border border-gold/40 bg-gold/10 p-4 transition-colors hover:bg-gold/15"
+              >
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gold/20 text-gold">
+                  <TrendingUp size={18} />
+                </span>
+                <div className="min-w-0">
+                  <p className="text-sm font-medium">Hacé rendir lo que te sobra</p>
+                  <p className="text-xs text-muted-foreground">
+                    Empezá a invertir y seguilo desde acá
+                  </p>
+                </div>
+                <ArrowRight className="ml-auto h-5 w-5 shrink-0 text-muted-foreground" />
+              </Link>
+            )}
 
             {/* Ahorro mes a mes */}
             {r.meses.length > 0 && (
