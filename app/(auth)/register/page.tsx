@@ -75,7 +75,7 @@ export default function RegisterPage() {
         </div>
         <Link
           href="/login"
-          className="mt-5 block w-full rounded-full bg-brand py-3.5 text-center font-medium text-brand-foreground"
+          className="mt-5 block w-full rounded-lg bg-brand py-3.5 text-center font-medium text-brand-foreground"
         >
           Ya confirmé — ir a ingresar
         </Link>
@@ -147,7 +147,7 @@ export default function RegisterPage() {
         <motion.button
           whileTap={{ scale: 0.98 }}
           disabled={loading}
-          className="w-full rounded-full bg-brand py-3.5 font-medium text-brand-foreground transition-opacity disabled:opacity-50"
+          className="w-full rounded-lg bg-brand py-3.5 font-medium text-brand-foreground transition-opacity disabled:opacity-50"
         >
           {loading ? "Creando tu cuenta…" : "Crear cuenta"}
         </motion.button>
@@ -157,7 +157,7 @@ export default function RegisterPage() {
 
       <button
         onClick={handleGoogle}
-        className="w-full rounded-full border border-border py-3.5 text-sm font-medium transition-colors hover:bg-muted"
+        className="w-full rounded-lg border border-border py-3.5 text-sm font-medium transition-colors hover:bg-muted"
       >
         Continuar con Google
       </button>

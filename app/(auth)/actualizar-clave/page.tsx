@@ -69,7 +69,7 @@ export default function ActualizarClavePage() {
       <AuthShell title="¡Listo! 🎉" subtitle="Tu contraseña quedó actualizada">
         <Link
           href="/inicio"
-          className="mt-2 block w-full rounded-full bg-brand py-3.5 text-center font-medium text-brand-foreground"
+          className="mt-2 block w-full rounded-lg bg-brand py-3.5 text-center font-medium text-brand-foreground"
         >
           Ir a Fluir
         </Link>
@@ -85,7 +85,7 @@ export default function ActualizarClavePage() {
       >
         <Link
           href="/recuperar"
-          className="mt-2 block w-full rounded-full bg-brand py-3.5 text-center font-medium text-brand-foreground"
+          className="mt-2 block w-full rounded-lg bg-brand py-3.5 text-center font-medium text-brand-foreground"
         >
           Pedir un link nuevo
         </Link>
@@ -109,7 +109,7 @@ export default function ActualizarClavePage() {
         {error && <p className="text-sm text-negative">{error}</p>}
         <button
           disabled={loading}
-          className="w-full rounded-full bg-brand py-3.5 font-medium text-brand-foreground transition-opacity disabled:opacity-50"
+          className="w-full rounded-lg bg-brand py-3.5 font-medium text-brand-foreground transition-opacity disabled:opacity-50"
         >
           {loading ? "Guardando…" : "Guardar contraseña"}
         </button>

@@ -131,14 +131,14 @@ export default function ContactoPage() {
             href={whatsapp()}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex flex-1 items-center justify-center gap-2 rounded-full bg-brand py-3 text-sm font-medium text-brand-foreground transition-opacity hover:opacity-90"
+            className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-brand py-3 text-sm font-medium text-brand-foreground transition-opacity hover:opacity-90"
           >
             <MessageCircle size={16} />
             WhatsApp {WHATSAPP_DISPLAY}
           </a>
           <a
             href={mailto("Consulta desde Fluir")}
-            className="flex flex-1 items-center justify-center gap-2 rounded-full border border-border py-3 text-sm font-medium transition-colors hover:bg-muted"
+            className="flex flex-1 items-center justify-center gap-2 rounded-lg border border-border py-3 text-sm font-medium transition-colors hover:bg-muted"
           >
             <Mail size={16} />
             Escribinos por mail
@@ -155,7 +155,7 @@ export default function ContactoPage() {
             href={INSTAGRAM_URL}
             target="_blank"
             rel="noopener noreferrer"
-            className="mt-4 inline-flex items-center gap-2 rounded-full border border-border px-3.5 py-2 text-sm font-medium transition-colors hover:bg-muted"
+            className="mt-4 inline-flex items-center gap-2 rounded-lg border border-border px-3.5 py-2 text-sm font-medium transition-colors hover:bg-muted"
           >
             <AtSign size={16} />
             {INSTAGRAM_HANDLE} en Instagram

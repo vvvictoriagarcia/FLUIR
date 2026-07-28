@@ -143,7 +143,7 @@ export default function CuentaPage() {
           <button
             onClick={handleExport}
             disabled={exporting || loading}
-            className="mt-4 w-full rounded-full border border-border py-3 text-sm font-medium transition-colors hover:bg-muted disabled:opacity-50"
+            className="mt-4 w-full rounded-lg border border-border py-3 text-sm font-medium transition-colors hover:bg-muted disabled:opacity-50"
           >
             {exporting ? "Preparando…" : "Descargar mis datos"}
           </button>
@@ -162,7 +162,7 @@ export default function CuentaPage() {
           <button
             onClick={() => setConfirmOpen(true)}
             disabled={deleting || loading}
-            className="mt-4 w-full rounded-full border border-negative/40 py-3 text-sm font-medium text-negative transition-colors hover:bg-negative/10 disabled:opacity-50"
+            className="mt-4 w-full rounded-lg border border-negative/40 py-3 text-sm font-medium text-negative transition-colors hover:bg-negative/10 disabled:opacity-50"
           >
             {deleting ? "Borrando…" : "Borrar mi cuenta"}
           </button>

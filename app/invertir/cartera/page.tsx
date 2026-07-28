@@ -483,7 +483,7 @@ function Cartera() {
               <button
                 onClick={() => fileRef.current?.click()}
                 disabled={leyendo}
-                className="flex flex-1 items-center justify-center gap-1.5 rounded-full border border-border py-3 text-sm font-medium transition-colors hover:bg-muted disabled:opacity-60 lg:max-w-xs"
+                className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-border py-3 text-sm font-medium transition-colors hover:bg-muted disabled:opacity-60 lg:max-w-xs"
               >
                 <Camera size={15} />
                 {leyendo ? "Leyendo…" : "Cargar con una foto"}
@@ -589,14 +589,14 @@ function EmptyState({
         <button
           onClick={onFoto}
           disabled={leyendo}
-          className="flex w-full items-center justify-center gap-2 rounded-full bg-gold py-3 text-sm font-medium text-gold-foreground disabled:opacity-60"
+          className="flex w-full items-center justify-center gap-2 rounded-lg bg-gold py-3 text-sm font-medium text-gold-foreground disabled:opacity-60"
         >
           <Camera size={16} />
           {leyendo ? "Leyendo la imagen…" : "Sacarle una foto a mi broker"}
         </button>
         <button
           onClick={onAdd}
-          className="w-full rounded-full border border-border py-3 text-sm font-medium transition-colors hover:bg-muted"
+          className="w-full rounded-lg border border-border py-3 text-sm font-medium transition-colors hover:bg-muted"
         >
           Cargar a mano
         </button>
@@ -746,14 +746,14 @@ function NuevaTenenciaModal({
         <div className="mt-5 flex gap-2">
           <button
             onClick={onClose}
-            className="flex-1 rounded-full border border-border py-3 text-sm font-medium transition-colors hover:bg-muted"
+            className="flex-1 rounded-lg border border-border py-3 text-sm font-medium transition-colors hover:bg-muted"
           >
             Cancelar
           </button>
           <button
             onClick={save}
             disabled={saving}
-            className="flex-1 rounded-full bg-gold py-3 text-sm font-medium text-gold-foreground transition-opacity hover:opacity-90 disabled:opacity-60"
+            className="flex-1 rounded-lg bg-gold py-3 text-sm font-medium text-gold-foreground transition-opacity hover:opacity-90 disabled:opacity-60"
           >
             {saving ? "Guardando…" : editando ? "Guardar cambios" : "Agregar"}
           </button>
@@ -866,7 +866,7 @@ function PreviewImportModal({
         <div className="mt-5 flex gap-2">
           <button
             onClick={onCancel}
-            className="flex-1 rounded-full border border-border py-3 text-sm font-medium transition-colors hover:bg-muted"
+            className="flex-1 rounded-lg border border-border py-3 text-sm font-medium transition-colors hover:bg-muted"
           >
             Cancelar
           </button>
@@ -885,7 +885,7 @@ function PreviewImportModal({
               setGuardando(false);
             }}
             disabled={guardando || elegidas.length === 0}
-            className="flex-1 rounded-full bg-gold py-3 text-sm font-medium text-gold-foreground transition-opacity hover:opacity-90 disabled:opacity-60"
+            className="flex-1 rounded-lg bg-gold py-3 text-sm font-medium text-gold-foreground transition-opacity hover:opacity-90 disabled:opacity-60"
           >
             {guardando ? "Guardando…" : `Agregar ${elegidas.length}`}
           </button>
@@ -1067,14 +1067,14 @@ function SellModal({
         <div className="mt-5 flex gap-2">
           <button
             onClick={onClose}
-            className="flex-1 rounded-full border border-border py-3 text-sm font-medium transition-colors hover:bg-muted"
+            className="flex-1 rounded-lg border border-border py-3 text-sm font-medium transition-colors hover:bg-muted"
           >
             Cancelar
           </button>
           <button
             onClick={save}
             disabled={guardando}
-            className="flex-1 rounded-full bg-gold py-3 text-sm font-medium text-gold-foreground transition-opacity hover:opacity-90 disabled:opacity-60"
+            className="flex-1 rounded-lg bg-gold py-3 text-sm font-medium text-gold-foreground transition-opacity hover:opacity-90 disabled:opacity-60"
           >
             {guardando ? "Guardando…" : "Registrar venta"}
           </button>

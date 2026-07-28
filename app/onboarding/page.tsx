@@ -313,7 +313,7 @@ function IncomeStep({
         whileTap={valid ? { scale: 0.98 } : undefined}
         disabled={!valid}
         onClick={onNext}
-        className="mt-5 flex w-full items-center justify-center gap-2 rounded-full bg-brand py-4 font-medium text-brand-foreground transition-opacity disabled:opacity-40"
+        className="mt-5 flex w-full items-center justify-center gap-2 rounded-lg bg-brand py-4 font-medium text-brand-foreground transition-opacity disabled:opacity-40"
       >
         Siguiente
         <ArrowRight className="h-5 w-5" />
@@ -446,7 +446,7 @@ function Result({
                 </p>
                 <Link
                   href="/register?from=onboarding"
-                  className="mt-3 flex w-full items-center justify-center gap-2 rounded-full bg-brand py-3.5 font-medium text-brand-foreground"
+                  className="mt-3 flex w-full items-center justify-center gap-2 rounded-lg bg-brand py-3.5 font-medium text-brand-foreground"
                 >
                   Crear mi cuenta gratis
                   <ArrowRight className="h-4 w-4" />
@@ -460,8 +460,8 @@ function Result({
               onClick={goToDashboard}
               className={
                 loggedIn
-                  ? "flex w-full items-center justify-center gap-2 rounded-full bg-brand py-4 font-medium text-brand-foreground shadow-lg shadow-brand/25"
-                  : "flex w-full items-center justify-center gap-2 rounded-full border border-border py-3.5 text-sm font-medium transition-colors hover:bg-muted"
+                  ? "flex w-full items-center justify-center gap-2 rounded-lg bg-brand py-4 font-medium text-brand-foreground shadow-lg shadow-brand/25"
+                  : "flex w-full items-center justify-center gap-2 rounded-lg border border-border py-3.5 text-sm font-medium transition-colors hover:bg-muted"
               }
             >
               {loggedIn ? "Empezar a usar Fluir" : "Empezar sin cuenta"}
@@ -469,7 +469,7 @@ function Result({
             </motion.button>
             <button
               onClick={onRestart}
-              className="flex w-full items-center justify-center gap-2 rounded-full py-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+              className="flex w-full items-center justify-center gap-2 rounded-lg py-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
             >
               <RotateCcw className="h-4 w-4" />
               Probar con otros datos

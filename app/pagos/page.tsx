@@ -165,7 +165,7 @@ export default function PagosPage() {
                   {p.status !== "pagado" && (
                     <button
                       onClick={() => handlePaid(p)}
-                      className="flex flex-1 items-center justify-center gap-1.5 rounded-full bg-brand py-2 text-sm font-medium text-brand-foreground transition-opacity hover:opacity-90"
+                      className="flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-brand py-2 text-sm font-medium text-brand-foreground transition-opacity hover:opacity-90"
                     >
                       <Check size={15} />
                       Ya lo pagué
@@ -174,7 +174,7 @@ export default function PagosPage() {
                   <button
                     onClick={() => setToDelete(p)}
                     aria-label={`Borrar ${p.name}`}
-                    className="rounded-full border border-border px-3 py-2 text-muted-foreground transition-colors hover:bg-muted"
+                    className="rounded-lg border border-border px-3 py-2 text-muted-foreground transition-colors hover:bg-muted"
                   >
                     <Trash2 size={15} />
                   </button>
@@ -340,14 +340,14 @@ function NuevoPagoModal({
         <div className="mt-5 flex gap-2">
           <button
             onClick={onClose}
-            className="flex-1 rounded-full border border-border py-3 text-sm font-medium transition-colors hover:bg-muted"
+            className="flex-1 rounded-lg border border-border py-3 text-sm font-medium transition-colors hover:bg-muted"
           >
             Cancelar
           </button>
           <button
             onClick={save}
             disabled={saving}
-            className="flex-1 rounded-full bg-brand py-3 text-sm font-medium text-brand-foreground transition-opacity hover:opacity-90 disabled:opacity-60"
+            className="flex-1 rounded-lg bg-brand py-3 text-sm font-medium text-brand-foreground transition-opacity hover:opacity-90 disabled:opacity-60"
           >
             {saving ? "Guardando…" : "Guardar"}
           </button>

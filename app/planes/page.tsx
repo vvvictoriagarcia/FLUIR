@@ -186,7 +186,7 @@ export default function PlanesPage() {
                 disabled={inactive(plan, current) || loading === plan.id}
                 onClick={() => subscribe(plan.id)}
                 className={cn(
-                  "mt-5 w-full rounded-full py-3 text-sm font-medium transition-opacity",
+                  "mt-5 w-full rounded-lg py-3 text-sm font-medium transition-opacity",
                   inactive(plan, current)
                     ? "cursor-default border border-border text-muted-foreground"
                     : plan.accent === "brand"

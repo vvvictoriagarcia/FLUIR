@@ -46,7 +46,7 @@ export default function GraciasPage() {
         <div className="mt-7 space-y-3">
           <Link
             href="/inicio"
-            className="block w-full rounded-full bg-brand py-3.5 text-sm font-medium text-brand-foreground transition-opacity hover:opacity-90"
+            className="block w-full rounded-lg bg-brand py-3.5 text-sm font-medium text-brand-foreground transition-opacity hover:opacity-90"
           >
             Ir a mi plata
           </Link>
@@ -58,7 +58,7 @@ export default function GraciasPage() {
                 window.location.reload();
               }}
               disabled={checking}
-              className="flex w-full items-center justify-center gap-2 rounded-full border border-border py-3.5 text-sm font-medium transition-colors hover:bg-muted disabled:opacity-60"
+              className="flex w-full items-center justify-center gap-2 rounded-lg border border-border py-3.5 text-sm font-medium transition-colors hover:bg-muted disabled:opacity-60"
             >
               <RotateCw size={16} className={checking ? "animate-spin" : ""} />
               {checking ? "Actualizando…" : "Actualizar estado"}

@@ -127,7 +127,7 @@ export function ExpenseModal({
         <button
           disabled={!valid}
           onClick={() => onSave(categoriaFinal, amountNumber, description.trim())}
-          className="w-full rounded-full bg-brand py-4 font-medium text-brand-foreground transition-opacity disabled:opacity-40"
+          className="w-full rounded-lg bg-brand py-4 font-medium text-brand-foreground transition-opacity disabled:opacity-40"
         >
           {saveLabel}
         </button>

@@ -147,13 +147,13 @@ export default function PatrimonioPage() {
               <div className="mt-3 flex gap-2">
                 <button
                   onClick={() => setEditando(false)}
-                  className="flex-1 rounded-full border border-border py-2.5 text-sm font-medium transition-colors hover:bg-muted"
+                  className="flex-1 rounded-lg border border-border py-2.5 text-sm font-medium transition-colors hover:bg-muted"
                 >
                   Cancelar
                 </button>
                 <button
                   onClick={guardarAhorros}
-                  className="flex-1 rounded-full bg-brand py-2.5 text-sm font-medium text-brand-foreground transition-opacity hover:opacity-90"
+                  className="flex-1 rounded-lg bg-brand py-2.5 text-sm font-medium text-brand-foreground transition-opacity hover:opacity-90"
                 >
                   Guardar
                 </button>
@@ -178,7 +178,7 @@ export default function PatrimonioPage() {
                   setInput(ahorros ? String(ahorros) : "");
                   setEditando(true);
                 }}
-                className="shrink-0 rounded-full border border-border px-4 py-2 text-sm font-medium transition-colors hover:bg-muted"
+                className="shrink-0 rounded-lg border border-border px-4 py-2 text-sm font-medium transition-colors hover:bg-muted"
               >
                 {ahorros ? "Ajustar" : "Cargar"}
               </button>

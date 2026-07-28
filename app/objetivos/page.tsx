@@ -134,7 +134,7 @@ export default function ObjetivosPage() {
           </div>
           <button
             onClick={() => setShowNew(true)}
-            className="flex shrink-0 items-center gap-1.5 rounded-full bg-brand px-4 py-2.5 text-sm font-medium text-brand-foreground transition-opacity hover:opacity-90"
+            className="flex shrink-0 items-center gap-1.5 rounded-lg bg-brand px-4 py-2.5 text-sm font-medium text-brand-foreground transition-opacity hover:opacity-90"
           >
             <Plus size={16} />
             Nuevo
@@ -330,7 +330,7 @@ function GoalCard({
       {!done && (
         <button
           onClick={onContribute}
-          className="mt-4 w-full rounded-full border border-brand/40 py-2.5 text-sm font-medium text-brand transition-colors hover:bg-brand/10"
+          className="mt-4 w-full rounded-lg border border-brand/40 py-2.5 text-sm font-medium text-brand transition-colors hover:bg-brand/10"
         >
           Aportar
         </button>
@@ -352,7 +352,7 @@ function EmptyState({ onNew }: { onNew: () => void }) {
       </p>
       <button
         onClick={onNew}
-        className="mt-5 inline-flex items-center gap-1.5 rounded-full bg-brand px-5 py-2.5 text-sm font-medium text-brand-foreground"
+        className="mt-5 inline-flex items-center gap-1.5 rounded-lg bg-brand px-5 py-2.5 text-sm font-medium text-brand-foreground"
       >
         <Plus size={16} />
         Crear mi primer objetivo
@@ -424,7 +424,7 @@ function NewGoalModal({
               key={m}
               onClick={() => setMonths(m)}
               className={cn(
-                "flex-1 rounded-full border py-2.5 text-sm font-medium transition-colors",
+                "flex-1 rounded-lg border py-2.5 text-sm font-medium transition-colors",
                 months === m
                   ? "border-brand bg-brand text-brand-foreground"
                   : "border-border hover:bg-muted"
@@ -453,7 +453,7 @@ function NewGoalModal({
 
       <button
         onClick={submit}
-        className="mt-5 w-full rounded-full bg-brand py-3.5 font-medium text-brand-foreground transition-opacity hover:opacity-90"
+        className="mt-5 w-full rounded-lg bg-brand py-3.5 font-medium text-brand-foreground transition-opacity hover:opacity-90"
       >
         Crear objetivo
       </button>
@@ -517,7 +517,7 @@ function ContributeModal({
       <button
         onClick={() => value > 0 && onContribute(value)}
         disabled={value <= 0}
-        className="mt-5 w-full rounded-full bg-brand py-3.5 font-medium text-brand-foreground transition-opacity hover:opacity-90 disabled:opacity-40"
+        className="mt-5 w-full rounded-lg bg-brand py-3.5 font-medium text-brand-foreground transition-opacity hover:opacity-90 disabled:opacity-40"
       >
         Sumar {value > 0 ? formatARS(value) : "aporte"}
       </button>

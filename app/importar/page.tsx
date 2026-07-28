@@ -223,7 +223,7 @@ export default function ImportarPage() {
             </div>
             <button
               onClick={confirm}
-              className="mt-6 w-full rounded-full bg-brand py-3.5 font-medium text-brand-foreground transition-opacity hover:opacity-90"
+              className="mt-6 w-full rounded-lg bg-brand py-3.5 font-medium text-brand-foreground transition-opacity hover:opacity-90"
             >
               Importar {rows.filter((r) => r.include).length} movimientos
             </button>
@@ -254,7 +254,7 @@ export default function ImportarPage() {
             </p>
             <Link
               href="/inicio"
-              className="mt-6 inline-block rounded-full bg-brand px-6 py-3 text-sm font-medium text-brand-foreground"
+              className="mt-6 inline-block rounded-lg bg-brand px-6 py-3 text-sm font-medium text-brand-foreground"
             >
               Ver mi tablero
             </Link>

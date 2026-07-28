@@ -433,7 +433,7 @@ export default function DashboardPage() {
       <motion.button
         whileTap={{ scale: 0.92 }}
         onClick={() => setModalOpen(true)}
-        className="fixed bottom-20 right-5 z-30 flex items-center gap-2 rounded-full bg-brand px-5 py-4 font-medium text-brand-foreground shadow-lg shadow-brand/30 md:bottom-8 md:right-8"
+        className="fixed bottom-20 right-5 z-30 flex items-center gap-2 rounded-xl bg-brand px-5 py-4 font-medium text-brand-foreground shadow-lg shadow-brand/30 md:bottom-8 md:right-8"
       >
         <Plus className="h-5 w-5" />
         Cargar gasto
@@ -591,7 +591,7 @@ function EmptyState({ onAdd }: { onAdd: () => void }) {
       </p>
       <button
         onClick={onAdd}
-        className="mt-4 rounded-full bg-brand px-5 py-2.5 text-sm font-medium text-brand-foreground"
+        className="mt-4 rounded-lg bg-brand px-5 py-2.5 text-sm font-medium text-brand-foreground"
       >
         Registrar mi primer gasto
       </button>

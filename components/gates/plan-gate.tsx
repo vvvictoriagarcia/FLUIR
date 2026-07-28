@@ -95,7 +95,7 @@ function Paywall({
 
       <Link
         href="/planes"
-        className={`mt-7 inline-flex w-full items-center justify-center rounded-full py-3.5 font-medium transition-opacity hover:opacity-90 ${
+        className={`mt-7 inline-flex w-full items-center justify-center rounded-lg py-3.5 font-medium transition-opacity hover:opacity-90 ${
           isGold
             ? "bg-gold text-gold-foreground"
             : "bg-brand text-brand-foreground"

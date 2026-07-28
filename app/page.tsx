@@ -142,7 +142,7 @@ export default function Landing() {
         {/* resplandor cálido, apoyado en el fondo arena (no un lavado violeta) */}
         <div aria-hidden className="hero-glow pointer-events-none absolute inset-x-0 top-0 h-[440px]" />
 
-        <div className="mx-auto grid max-w-6xl items-center gap-12 px-6 pt-10 pb-16 lg:grid-cols-[1.05fr_0.95fr] lg:gap-8 lg:pt-16 lg:pb-24">
+        <div className="mx-auto grid max-w-6xl items-center gap-12 px-6 pt-8 pb-14 lg:grid-cols-[1.05fr_0.95fr] lg:gap-8 lg:pt-14 lg:pb-20">
           {/* Columna izquierda: mensaje */}
           <motion.div
             initial={{ opacity: 0, y: 16 }}
@@ -187,7 +187,7 @@ export default function Landing() {
               <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}>
                 <Link
                   href={ctaHref}
-                  className="inline-flex items-center gap-2 rounded-full bg-brand px-7 py-3.5 text-base font-medium text-brand-foreground shadow-lg shadow-brand/25 transition-shadow hover:shadow-xl"
+                  className="inline-flex items-center gap-2 rounded-lg bg-brand px-7 py-3.5 text-base font-medium text-brand-foreground shadow-lg shadow-brand/25 transition-shadow hover:shadow-xl"
                 >
                   {ctaLabel}
                   <ArrowRight className="h-5 w-5" />
@@ -273,7 +273,7 @@ export default function Landing() {
       </section>
 
       {/* ── Features ─────────────────────────────────────────────────── */}
-      <section className="mx-auto max-w-5xl px-6 pb-20">
+      <section className="mx-auto max-w-5xl px-6 pb-16">
         <div className="grid gap-px overflow-hidden rounded-card border border-border bg-border sm:grid-cols-2">
           {FEATURES.map((f, i) => (
             <motion.div
@@ -297,7 +297,7 @@ export default function Landing() {
       </section>
 
       {/* ── Quiénes somos / misión — layout asimétrico, no "3 tarjetas" ── */}
-      <section className="border-y border-border bg-card/40 px-6 py-20">
+      <section className="border-y border-border bg-card/40 px-6 py-16">
         <div className="mx-auto grid max-w-5xl gap-12 lg:grid-cols-[0.9fr_1.1fr] lg:gap-16">
           <div>
             <span className="flex items-center gap-3 text-xs font-semibold uppercase tracking-[0.14em] text-brand">
@@ -336,7 +336,7 @@ export default function Landing() {
       </section>
 
       {/* ── Educación — hábitos como "línea de flujo" numerada ────────── */}
-      <section className="mx-auto max-w-5xl px-6 py-20">
+      <section className="mx-auto max-w-5xl px-6 py-16">
         <div className="max-w-2xl">
           <span className="flex items-center gap-3 text-xs font-semibold uppercase tracking-[0.14em] text-brand">
             <span className="h-px w-8 bg-brand/60" />
@@ -382,7 +382,7 @@ export default function Landing() {
       </section>
 
       {/* ── Precios ──────────────────────────────────────────────────── */}
-      <section className="border-t border-border bg-card/40 px-6 py-20">
+      <section className="border-t border-border bg-card/40 px-6 py-16">
         <div className="mx-auto max-w-5xl">
           <div className="max-w-2xl">
             <span className="flex items-center gap-3 text-xs font-semibold uppercase tracking-[0.14em] text-brand">
@@ -447,7 +447,7 @@ export default function Landing() {
       </section>
 
       {/* ── Cierre ───────────────────────────────────────────────────── */}
-      <section className="mx-auto max-w-3xl px-6 py-24 text-center">
+      <section className="mx-auto max-w-3xl px-6 py-20 text-center">
         <h2 className="font-display text-3xl font-semibold leading-tight tracking-tight sm:text-4xl">
           Tu plata, en orden. Hoy.
         </h2>
@@ -462,7 +462,7 @@ export default function Landing() {
         >
           <Link
             href={ctaHref}
-            className="inline-flex items-center gap-2 rounded-full bg-brand px-8 py-4 text-lg font-medium text-brand-foreground shadow-lg shadow-brand/25 transition-shadow hover:shadow-xl"
+            className="inline-flex items-center gap-2 rounded-lg bg-brand px-8 py-4 text-lg font-medium text-brand-foreground shadow-lg shadow-brand/25 transition-shadow hover:shadow-xl"
           >
             {ctaLabel}
             <ArrowRight className="h-5 w-5" />

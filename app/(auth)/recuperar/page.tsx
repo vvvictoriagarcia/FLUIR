@@ -46,7 +46,7 @@ export default function RecuperarPage() {
         </div>
         <Link
           href="/login"
-          className="mt-5 block w-full rounded-full border border-border py-3.5 text-center text-sm font-medium transition-colors hover:bg-muted"
+          className="mt-5 block w-full rounded-lg border border-border py-3.5 text-center text-sm font-medium transition-colors hover:bg-muted"
         >
           Volver a ingresar
         </Link>
@@ -70,7 +70,7 @@ export default function RecuperarPage() {
         {error && <p className="text-sm text-negative">{error}</p>}
         <button
           disabled={loading}
-          className="w-full rounded-full bg-brand py-3.5 font-medium text-brand-foreground transition-opacity disabled:opacity-50"
+          className="w-full rounded-lg bg-brand py-3.5 font-medium text-brand-foreground transition-opacity disabled:opacity-50"
         >
           {loading ? "Enviando…" : "Enviarme el link"}
         </button>

@@ -161,7 +161,7 @@ export default function NuevoMesPage() {
           whileTap={{ scale: 0.98 }}
           disabled={saving || income < 1000}
           onClick={() => start(false)}
-          className="mt-6 flex w-full items-center justify-center gap-2 rounded-full bg-brand py-4 font-medium text-brand-foreground transition-opacity disabled:opacity-50"
+          className="mt-6 flex w-full items-center justify-center gap-2 rounded-lg bg-brand py-4 font-medium text-brand-foreground transition-opacity disabled:opacity-50"
         >
           {saving ? "Armando tu mes…" : "Arrancar el mes"}
           <ArrowRight size={18} />

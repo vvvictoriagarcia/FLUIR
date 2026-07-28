@@ -93,7 +93,7 @@ export default function LoginPage() {
         <motion.button
           whileTap={{ scale: 0.98 }}
           disabled={loading}
-          className="w-full rounded-full bg-brand py-3.5 font-medium text-brand-foreground transition-opacity disabled:opacity-50"
+          className="w-full rounded-lg bg-brand py-3.5 font-medium text-brand-foreground transition-opacity disabled:opacity-50"
         >
           {loading ? "Entrando…" : "Ingresar"}
         </motion.button>
@@ -103,7 +103,7 @@ export default function LoginPage() {
 
       <button
         onClick={handleGoogle}
-        className="w-full rounded-full border border-border py-3.5 text-sm font-medium transition-colors hover:bg-muted"
+        className="w-full rounded-lg border border-border py-3.5 text-sm font-medium transition-colors hover:bg-muted"
       >
         Continuar con Google
       </button>

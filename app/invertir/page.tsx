@@ -153,7 +153,7 @@ function Journey() {
           <button
             onClick={() => setStep((s) => s + 1)}
             disabled={step === 1 && (colchon === null || deudas === null)}
-            className="flex items-center gap-1.5 rounded-full bg-gold px-6 py-3 text-sm font-medium text-gold-foreground transition-opacity hover:opacity-90 disabled:opacity-40"
+            className="flex items-center gap-1.5 rounded-lg bg-gold px-6 py-3 text-sm font-medium text-gold-foreground transition-opacity hover:opacity-90 disabled:opacity-40"
           >
             {step === 0 ? "Empezar" : "Siguiente"}
             <ArrowRight size={16} />
@@ -164,7 +164,7 @@ function Journey() {
               marcarGuiaVista();
               router.push("/invertir/cartera");
             }}
-            className="rounded-full bg-gold px-6 py-3 text-sm font-medium text-gold-foreground"
+            className="rounded-lg bg-gold px-6 py-3 text-sm font-medium text-gold-foreground"
           >
             Terminar
           </button>
@@ -287,7 +287,7 @@ function YesNo({
           <button
             key={o.t}
             onClick={() => onChange(o.v)}
-            className={`flex-1 rounded-full border py-2.5 text-sm font-medium transition-colors ${
+            className={`flex-1 rounded-lg border py-2.5 text-sm font-medium transition-colors ${
               value === o.v
                 ? "border-gold bg-gold text-gold-foreground"
                 : "border-border hover:bg-muted"
