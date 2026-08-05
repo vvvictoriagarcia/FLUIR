@@ -1,12 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
 import { authErrorMessage } from "@/lib/auth-errors";
-import { readNext } from "@/lib/next-url";
+import { readNext, withNext } from "@/lib/next-url";
 import { saveEmailPrefs } from "@/lib/profile";
 import { migrateLocalToSupabase } from "@/lib/data";
 import { AuthShell, Field, Separator } from "../login/page";
@@ -21,6 +21,12 @@ export default function RegisterPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [sent, setSent] = useState(false);
+  // Link a login preservando el ?next= (resuelto tras montar, ver login).
+  const [loginHref, setLoginHref] = useState("/login");
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- lectura única de la URL al montar
+    setLoginHref(withNext("/login"));
+  }, []);
 
   async function handleRegister(e: React.FormEvent) {
     e.preventDefault();
@@ -89,9 +95,14 @@ export default function RegisterPage() {
       return;
     }
     const supabase = createClient();
+    // Igual que en login: pasamos por /auth/callback para canjear el `code` por
+    // sesión en el servidor antes de mandar a onboarding.
+    const dest = readNext("/onboarding");
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
-      options: { redirectTo: `${window.location.origin}${readNext("/onboarding")}` },
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(dest)}`,
+      },
     });
     if (error) {
       setError(
@@ -164,7 +175,7 @@ export default function RegisterPage() {
 
       <p className="mt-6 text-center text-sm text-muted-foreground">
         ¿Ya tenés cuenta?{" "}
-        <Link href="/login" className="font-medium text-brand">
+        <Link href={loginHref} className="font-medium text-brand">
           Ingresá
         </Link>
       </p>

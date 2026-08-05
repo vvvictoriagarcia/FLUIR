@@ -7,7 +7,7 @@ import { motion } from "framer-motion";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
 import { migrateLocalToSupabase } from "@/lib/data";
 import { authErrorMessage } from "@/lib/auth-errors";
-import { readNext } from "@/lib/next-url";
+import { readNext, withNext } from "@/lib/next-url";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -15,6 +15,13 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Link a registro preservando el ?next= (se resuelve tras montar para no
+  // romper la hidratación; arranca en "/register" plano).
+  const [registerHref, setRegisterHref] = useState("/register");
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- lectura única de la URL al montar
+    setRegisterHref(withNext("/register"));
+  }, []);
 
   // Mensaje que puede venir del callback de email (?error=...). Se lee tras el
   // montaje para no romper la hidratación en la navegación dura del callback.
@@ -50,9 +57,16 @@ export default function LoginPage() {
       return;
     }
     const supabase = createClient();
+    // Volvemos por /auth/callback para que el intercambio de `code` por sesión
+    // ocurra en el servidor (cookie lista) ANTES de aterrizar en /inicio. Si
+    // fuéramos directo a /inicio, la página podría leer "sin sesión" antes de
+    // que el SDK canjee el code y rebotarte a onboarding ("a cualquier lado").
+    const dest = readNext("/inicio");
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
-      options: { redirectTo: `${window.location.origin}${readNext("/inicio")}` },
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(dest)}`,
+      },
     });
     if (error) {
       setError(
@@ -110,7 +124,7 @@ export default function LoginPage() {
 
       <p className="mt-6 text-center text-sm text-muted-foreground">
         ¿No tenés cuenta?{" "}
-        <Link href="/register" className="font-medium text-brand">
+        <Link href={registerHref} className="font-medium text-brand">
           Registrate
         </Link>
       </p>

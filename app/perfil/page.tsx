@@ -18,6 +18,7 @@ import {
   CreditCard,
   Wallet,
   BookOpen,
+  GraduationCap,
 } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { BottomNav } from "@/components/bottom-nav";
@@ -107,6 +108,7 @@ export default function PerfilPage() {
         {/* Menú */}
         <div className="mt-4 overflow-hidden rounded-card border border-border bg-card">
           <Row href="/guia" icon={BookOpen} label="Cómo usar Fluir" hint="Guía rápida: qué podés hacer y para qué sirve" />
+          <Row href="/educacion" icon={GraduationCap} label="Educación financiera" hint="Aprendé a manejar tu plata — próximamente" />
           <Row href="/patrimonio" icon={Wallet} label="Mis ahorros" hint="Lo que ya tenías guardado — ajustalo cuando quieras" />
           <Row href="/pagos" icon={CalendarClock} label="Pagos fijos" hint="Alquiler, tarjeta, seguro: te avisamos antes de que venzan" />
           <Row href="/objetivos" icon={Target} label="Objetivos" hint="Metas de ahorro con plazo y monto" />

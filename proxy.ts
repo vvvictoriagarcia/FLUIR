@@ -1,5 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { safeNext } from "@/lib/next-url";
 
 // Next 16: el middleware se llama `proxy`. Acá refrescamos la sesión de
 // Supabase (cookies) en cada request y redirigimos a quien ya está logueado
@@ -43,7 +44,11 @@ export async function proxy(request: NextRequest) {
   const isAuthPage = pathname === "/login" || pathname === "/register";
 
   if (user && isAuthPage) {
-    return NextResponse.redirect(new URL("/dashboard", request.url));
+    // Si ya está logueado, no tiene sentido mostrarle login/registro. Lo
+    // mandamos a /inicio (o a donde iba, si venía con ?next=). Antes apuntaba
+    // a /dashboard, que ya no existe y sólo funcionaba por un 308 encadenado.
+    const dest = safeNext(request.nextUrl.searchParams.get("next"), "/inicio");
+    return NextResponse.redirect(new URL(dest, request.url));
   }
 
   return response;
