@@ -129,7 +129,14 @@ export default function ObjetivosPage() {
             {inflation.lastValue != null && (
               <p className="mt-1.5 flex items-center gap-1.5 text-xs text-muted-foreground">
                 <TrendingUp size={13} className="shrink-0 text-brand" />
-                Proyectado con inflación de {inflation.lastValue}%/mes
+                {/* Mostramos la MISMA tasa que usamos para proyectar
+                    (monthlyRate = promedio de los últimos meses), no el último
+                    dato suelto: si no, el número no coincide con la cuenta. */}
+                Proyectado con inflación de{" "}
+                {(inflation.monthlyRate * 100).toLocaleString("es-AR", {
+                  maximumFractionDigits: 1,
+                })}
+                %/mes
                 {inflation.source === "INDEC" ? " (INDEC)" : " (estimado)"}
               </p>
             )}
