@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTrackFeature } from "@/lib/analytics";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { ArrowLeft, TrendingUp, TrendingDown, Minus, PiggyBank } from "lucide-react";
@@ -44,6 +45,7 @@ export default function HistorialPage() {
 }
 
 function HistorialContent() {
+  useTrackFeature("historial");
   const [months, setMonths] = useState<MonthSummary[] | null>(null);
 
   useEffect(() => {

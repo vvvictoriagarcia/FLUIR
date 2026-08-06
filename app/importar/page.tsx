@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useTrackFeature } from "@/lib/analytics";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { ArrowLeft, FileText, Camera, ShieldCheck, Check } from "lucide-react";
@@ -15,6 +16,7 @@ import { formatARS } from "@/lib/utils";
 type Row = Movement & { include: boolean };
 
 export default function ImportarPage() {
+  useTrackFeature("importar");
   const toast = useToast();
   const { user } = useUser();
   const [categories, setCategories] = useState<string[]>([]);

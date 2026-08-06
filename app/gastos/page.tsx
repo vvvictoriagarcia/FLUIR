@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useTrackFeature } from "@/lib/analytics";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
@@ -27,6 +28,7 @@ type ModalState =
   | null;
 
 export default function GastosPage() {
+  useTrackFeature("gastos");
   const router = useRouter();
   const toast = useToast();
   const [expenses, setExpenses] = useState<Expense[]>([]);

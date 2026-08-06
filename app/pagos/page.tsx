@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useTrackFeature } from "@/lib/analytics";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { ArrowLeft, Plus, CalendarClock, Check, Trash2 } from "lucide-react";
@@ -23,6 +24,7 @@ import { formatARS, cn } from "@/lib/utils";
 const DIA_CHIPS = [1, 5, 10, 15, 20, 30];
 
 export default function PagosPage() {
+  useTrackFeature("pagos");
   const toast = useToast();
   const [items, setItems] = useState<UpcomingPayment[]>([]);
   const [categories, setCategories] = useState<string[]>([]);

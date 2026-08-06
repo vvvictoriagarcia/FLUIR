@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTrackFeature } from "@/lib/analytics";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import {
@@ -45,6 +46,7 @@ interface Resumen {
 }
 
 export default function PatrimonioPage() {
+  useTrackFeature("patrimonio");
   const toast = useToast();
   const [r, setR] = useState<Resumen | null>(null);
   const [ahorros, setAhorros] = useState<number | null>(null);

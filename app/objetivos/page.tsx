@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTrackFeature } from "@/lib/analytics";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import {
@@ -46,6 +47,7 @@ function dateInMonths(n: number): string {
 }
 
 export default function ObjetivosPage() {
+  useTrackFeature("objetivos");
   const toast = useToast();
   const { inflation } = useInflation();
   const [goals, setGoals] = useState<Goal[] | null>(null);

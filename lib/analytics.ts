@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
 
 /**
@@ -21,7 +22,19 @@ export type EventName =
   | "first_expense_created"
   | "paywall_viewed"
   | "paywall_converted"
-  | "onboarding_completed";
+  | "onboarding_completed"
+  | "session_started" // una vez por visita (pestaña) → frecuencia/retención
+  | "feature_used"; // entró a una herramienta → adopción y uso
+
+/** Herramientas que medimos para adopción (prop `feature` de `feature_used`). */
+export type FeatureName =
+  | "gastos"
+  | "objetivos"
+  | "pagos"
+  | "importar"
+  | "cartera"
+  | "historial"
+  | "patrimonio";
 
 export type EventProps = Record<string, string | number | boolean | null>;
 
@@ -109,4 +122,27 @@ export function trackOnce(name: EventName, props: EventProps = {}): void {
     // Sin sessionStorage mandamos igual: mejor un duplicado que un ciego.
   }
   track(name, props);
+}
+
+// ── Fase 1: frecuencia de uso + adopción de herramientas ────────────
+
+/**
+ * Inicio de visita. Una sola vez por pestaña (trackOnce usa sessionStorage).
+ * Con esto + `created_at` + `user_id` se calculan DAU/WAU y retención por
+ * cohorte en el SQL Editor (ver `supabase/analytics_queries.sql`).
+ */
+export function startSession(): void {
+  trackOnce("session_started");
+}
+
+/** Registra que entró a una herramienta. Se dispara en cada visita a la página. */
+export function trackFeature(feature: FeatureName): void {
+  track("feature_used", { feature });
+}
+
+/** Hook para las páginas de herramientas: `useTrackFeature("gastos")`. */
+export function useTrackFeature(feature: FeatureName): void {
+  useEffect(() => {
+    trackFeature(feature);
+  }, [feature]);
 }

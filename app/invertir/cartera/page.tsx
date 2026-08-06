@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useTrackFeature } from "@/lib/analytics";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
@@ -59,6 +60,7 @@ export default function CarteraPage() {
 }
 
 function Cartera() {
+  useTrackFeature("cartera");
   const toast = useToast();
   const fileRef = useRef<HTMLInputElement>(null);
 

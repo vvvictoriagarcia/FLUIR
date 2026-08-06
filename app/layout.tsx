@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Fraunces, Inter } from "next/font/google";
 import "./globals.css";
 import { ToastProvider } from "@/components/toast";
+import { Analytics } from "@/components/analytics";
 import { siteUrl } from "@/lib/utils";
 
 // Display / títulos — serif variable, editorial, con carácter.
@@ -70,6 +71,7 @@ export default function RootLayout({
         <script dangerouslySetInnerHTML={{ __html: themeInit }} />
       </head>
       <body className="min-h-full">
+        <Analytics />
         <ToastProvider>{children}</ToastProvider>
       </body>
     </html>
