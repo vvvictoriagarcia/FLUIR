@@ -14,6 +14,7 @@ import {
   GraduationCap,
 } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { ScanDemo } from "@/components/scan-demo";
 import { useUser } from "@/hooks/useUser";
 import { WHATSAPP_DISPLAY, whatsapp } from "@/lib/contact";
 
@@ -293,6 +294,34 @@ export default function Landing() {
               </p>
             </motion.div>
           ))}
+        </div>
+      </section>
+
+      {/* ── Demo del escáner — "mostrar la magia" antes de pedir datos ── */}
+      <section className="border-t border-border px-6 py-16">
+        <div className="mx-auto max-w-5xl">
+          <div className="max-w-2xl">
+            <span className="flex items-center gap-3 text-xs font-semibold uppercase tracking-[0.14em] text-brand">
+              <span className="h-px w-8 bg-brand/60" />
+              Sin tipear nada
+            </span>
+            <h2 className="mt-4 font-display text-3xl font-semibold leading-tight tracking-tight sm:text-4xl">
+              Una foto y tus gastos ya están cargados
+            </h2>
+            <p className="mt-5 text-lg leading-relaxed text-muted-foreground">
+              Subís el resumen de tu tarjeta —foto o PDF— y Fluir lee cada
+              movimiento, le pone la categoría y lo suma a tu mes. Vos solo
+              revisás. Así de simple.
+            </p>
+          </div>
+
+          <div className="mt-10">
+            <ScanDemo />
+          </div>
+
+          <p className="mt-4 text-sm text-muted-foreground">
+            También sirve el resumen de Mercado Pago y el export CSV de tu banco.
+          </p>
         </div>
       </section>
 
