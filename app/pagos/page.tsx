@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useTrackFeature } from "@/lib/analytics";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { ArrowLeft, Plus, CalendarClock, Check, Trash2 } from "lucide-react";
+import { Plus, CalendarClock, Check, Trash2 } from "lucide-react";
 import { BottomNav } from "@/components/bottom-nav";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { useToast } from "@/components/toast";
@@ -81,15 +81,6 @@ export default function PagosPage() {
   return (
     <div className="min-h-screen pb-44 md:pl-60">
       <div className="mx-auto max-w-xl px-5 py-6 lg:max-w-6xl lg:px-8 xl:max-w-[1400px]">
-        <div className="mb-6 flex items-center justify-between">
-          <Link
-            href="/inicio"
-            className="flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
-          >
-            <ArrowLeft size={16} />
-            Volver
-          </Link>
-        </div>
 
         <h1 className="font-display text-3xl font-semibold">Pagos fijos</h1>
         <p className="mt-1 text-muted-foreground">

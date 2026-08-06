@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowLeft, GraduationCap, Sprout, PiggyBank, LineChart } from "lucide-react";
+import { GraduationCap, Sprout, PiggyBank, LineChart } from "lucide-react";
 import { BottomNav } from "@/components/bottom-nav";
 import { ThemeToggle } from "@/components/theme-toggle";
 
@@ -29,15 +29,8 @@ const ADELANTOS = [
 export default function EducacionPage() {
   return (
     <div className="min-h-screen pb-24 md:pl-60">
-      <div className="mx-auto max-w-xl px-5 py-6">
-        <div className="mb-6 flex items-center justify-between">
-          <Link
-            href="/inicio"
-            className="flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
-          >
-            <ArrowLeft size={16} />
-            Inicio
-          </Link>
+      <div className="mx-auto max-w-xl px-5 py-6 lg:max-w-6xl lg:px-8 xl:max-w-[1400px]">
+        <div className="mb-6 flex items-center justify-end">
           <ThemeToggle />
         </div>
 
@@ -58,7 +51,7 @@ export default function EducacionPage() {
           Próximamente
         </div>
 
-        <p className="mt-4 text-muted-foreground">
+        <p className="mt-4 max-w-2xl text-muted-foreground">
           Estamos armando un espacio para aprender lo básico de finanzas
           personales con la herramienta en la mano: nada de teoría aburrida, sí
           pequeños hábitos que se notan en tu plata. Muy pronto lo vas a tener
@@ -68,7 +61,7 @@ export default function EducacionPage() {
         <h2 className="mt-8 text-sm font-medium uppercase tracking-[0.08em] text-muted-foreground">
           Algo de lo que se viene
         </h2>
-        <div className="mt-3 space-y-3">
+        <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {ADELANTOS.map((a) => (
             <div
               key={a.title}
@@ -83,7 +76,7 @@ export default function EducacionPage() {
           ))}
         </div>
 
-        <p className="mt-6 text-sm text-muted-foreground">
+        <p className="mt-6 max-w-2xl text-sm text-muted-foreground">
           Mientras tanto, la mejor forma de aprender es usando Fluir:{" "}
           <Link href="/inicio" className="font-medium text-brand hover:underline">
             armá tu presupuesto

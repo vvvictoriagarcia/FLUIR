@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { useTrackFeature } from "@/lib/analytics";
 import Link from "next/link";
 import {
-  ArrowLeft,
   ArrowRight,
   TrendingUp,
   Receipt,
@@ -105,17 +104,8 @@ export default function PatrimonioPage() {
     <div className="min-h-screen pb-24 md:pl-60">
       <div className="mx-auto max-w-xl px-5 py-6 lg:max-w-6xl lg:px-8 xl:max-w-[1400px]">
         {/* Header */}
-        <div className="mb-6 flex items-center justify-between">
-          <Link
-            href="/inicio"
-            className="flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground md:hidden"
-          >
-            <ArrowLeft size={16} />
-            Inicio
-          </Link>
-          <div className="ml-auto">
-            <ThemeToggle />
-          </div>
+        <div className="mb-6 flex items-center justify-end">
+          <ThemeToggle />
         </div>
 
         <h1 className="font-display text-3xl font-semibold lg:text-4xl">

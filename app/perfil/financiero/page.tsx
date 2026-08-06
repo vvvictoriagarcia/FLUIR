@@ -114,7 +114,7 @@ export default function PerfilFinancieroPage() {
 
   return (
     <div className="min-h-screen px-5 py-6">
-      <div className="mx-auto max-w-xl">
+      <div className="mx-auto max-w-xl lg:max-w-3xl">
         <div className="mb-6 flex items-center justify-between">
           <Link
             href="/perfil"

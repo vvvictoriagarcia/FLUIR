@@ -2,10 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { useTrackFeature } from "@/lib/analytics";
-import Link from "next/link";
 import { motion } from "framer-motion";
 import {
-  ArrowLeft,
   Plus,
   Target,
   Trash2,
@@ -109,14 +107,7 @@ export default function ObjetivosPage() {
   return (
     <div className="min-h-screen pb-24 md:pl-60">
       <div className="mx-auto max-w-xl px-5 py-6 lg:max-w-6xl lg:px-8 xl:max-w-[1400px]">
-        <div className="mb-6 flex items-center justify-between">
-          <Link
-            href="/inicio"
-            className="flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
-          >
-            <ArrowLeft size={16} />
-            Inicio
-          </Link>
+        <div className="mb-6 flex items-center justify-end">
           <ThemeToggle />
         </div>
 

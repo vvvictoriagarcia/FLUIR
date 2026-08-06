@@ -82,7 +82,7 @@ const SECCIONES = [
 export default function GuiaPage() {
   return (
     <div className="min-h-screen pb-24 md:pl-60">
-      <div className="mx-auto max-w-2xl px-5 py-6">
+      <div className="mx-auto max-w-2xl px-5 py-6 lg:max-w-3xl lg:px-8">
         <div className="mb-6">
           <Link
             href="/perfil"

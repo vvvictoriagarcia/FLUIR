@@ -48,7 +48,7 @@ export default function PerfilPage() {
 
   return (
     <div className="min-h-screen pb-24 md:pl-60">
-      <div className="mx-auto max-w-xl px-5 py-6">
+      <div className="mx-auto max-w-xl px-5 py-6 lg:max-w-4xl lg:px-8">
         <div className="mb-6 flex items-center justify-between">
           <Link
             href="/inicio"

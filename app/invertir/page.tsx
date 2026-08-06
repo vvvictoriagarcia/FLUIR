@@ -26,15 +26,8 @@ import { formatARS } from "@/lib/utils";
 export default function InvertirPage() {
   return (
     <div className="min-h-screen pb-24 md:pl-60">
-      <div className="mx-auto max-w-xl px-5 py-6">
-        <div className="mb-6 flex items-center justify-between">
-          <Link
-            href="/inicio"
-            className="flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
-          >
-            <ArrowLeft size={16} />
-            Inicio
-          </Link>
+      <div className="mx-auto max-w-xl px-5 py-6 lg:max-w-3xl lg:px-8">
+        <div className="mb-6 flex items-center justify-end">
           <ThemeToggle />
         </div>
 
