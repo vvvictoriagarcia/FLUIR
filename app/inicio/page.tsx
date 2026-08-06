@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
-import { Plus, ChevronRight, Target } from "lucide-react";
+import { Plus, ChevronRight, Target, ShieldCheck } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { BottomNav } from "@/components/bottom-nav";
 import { UpcomingPayments } from "@/components/upcoming-payments";
@@ -46,7 +46,7 @@ import { monthBreakdown, savingsTrend } from "@/lib/calculators/budget";
 export default function DashboardPage() {
   const router = useRouter();
   const toast = useToast();
-  const { user } = useUser();
+  const { user, loading: userLoading } = useUser();
   const { inflation } = useInflation();
   const [budget, setBudget] = useState<SavedBudget | null>(null);
   const [expenses, setExpenses] = useState<Expense[]>([]);
@@ -209,6 +209,24 @@ export default function DashboardPage() {
           </p>
         </div>
         <h1 className="sr-only">Te quedan {formatARS(paraGastar)} para gastar</h1>
+
+        {/* Sin cuenta + ya cargó datos: recordá que el demo vive en este
+            navegador y se puede perder. Empujón suave a crear cuenta. */}
+        {!userLoading && !user && expenses.length > 0 && (
+          <Link
+            href="/register"
+            className="mb-5 flex items-center gap-3 rounded-card border border-brand/30 bg-brand/5 p-3.5 transition-colors hover:bg-brand/10"
+          >
+            <ShieldCheck className="h-5 w-5 shrink-0 text-brand" />
+            <div className="min-w-0">
+              <p className="text-sm font-medium">Guardá tu progreso</p>
+              <p className="text-xs text-muted-foreground">
+                Estás sin cuenta: creá una gratis para no perder tus datos.
+              </p>
+            </div>
+            <ChevronRight className="ml-auto h-5 w-5 shrink-0 text-muted-foreground" />
+          </Link>
+        )}
 
         {/* Anillo grande — solo en mobile (es el héroe de la pantalla chica) */}
         <div className="mb-6 flex justify-center lg:hidden">

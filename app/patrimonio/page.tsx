@@ -371,6 +371,10 @@ function AhorroMensual({ meses }: { meses: MonthSummary[] }) {
   // Altura del riel en px. Usamos px (no %) porque framer-motion no interpola
   // bien hacia "100%" y la barra quedaba en 0 (ese era el gráfico vacío).
   const TRACK_H = 124;
+  // Mes en curso: su "ahorrado" es provisional (todavía podés gastar), así que
+  // lo marcamos para no confundir con los meses ya cerrados.
+  const ahora = new Date();
+  const mesActualYM = `${ahora.getFullYear()}-${String(ahora.getMonth() + 1).padStart(2, "0")}`;
 
   return (
     <div className="mt-8">
@@ -437,6 +441,11 @@ function AhorroMensual({ meses }: { meses: MonthSummary[] }) {
                 >
                   {m.label.split(" ")[0].slice(0, 3)}
                 </span>
+                {m.month.slice(0, 7) === mesActualYM && (
+                  <span className="-mt-1 text-[9px] text-muted-foreground/70">
+                    en curso
+                  </span>
+                )}
               </div>
             );
           })}

@@ -138,6 +138,13 @@ export default function GastosPage() {
             >
               Registrar mi primer gasto
             </button>
+            <p className="mt-4 text-sm text-muted-foreground">
+              ¿Muchos gastos?{" "}
+              <Link href="/importar" className="font-medium text-brand hover:underline">
+                Sacale una foto al resumen
+              </Link>{" "}
+              y los cargamos por vos.
+            </p>
           </div>
         ) : (
           <div className="mt-6 space-y-6">

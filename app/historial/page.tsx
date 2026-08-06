@@ -102,6 +102,12 @@ function MonthCard({
   const saved = month.saved;
   const positive = saved >= 0;
 
+  // Mes en curso: lo "ahorrado" es provisional (todavía podés gastar), así que
+  // lo marcamos y suavizamos el rótulo para no confundir con meses cerrados.
+  const ahora = new Date();
+  const mesActualYM = `${ahora.getFullYear()}-${String(ahora.getMonth() + 1).padStart(2, "0")}`;
+  const esActual = month.month.slice(0, 7) === mesActualYM;
+
   // Comparativa de gasto vs el mes anterior (más viejo).
   const delta =
     prev && prev.spent > 0 ? (month.spent - prev.spent) / prev.spent : null;
@@ -113,9 +119,14 @@ function MonthCard({
       transition={{ delay: index * 0.06 }}
       className="rounded-card border border-border bg-card p-5"
     >
-      <div className="flex items-baseline justify-between">
+      <div className="flex items-baseline justify-between gap-2">
         <h2 className="font-display text-lg font-semibold capitalize">
           {month.label}
+          {esActual && (
+            <span className="ml-2 rounded-full bg-muted px-2 py-0.5 align-middle text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+              En curso
+            </span>
+          )}
         </h2>
         {delta !== null && <DeltaBadge delta={delta} />}
       </div>
@@ -124,7 +135,7 @@ function MonthCard({
         <Stat label="Ingreso" value={formatARS(month.income)} />
         <Stat label="Gastado" value={formatARS(month.spent)} />
         <Stat
-          label={positive ? "Ahorrado" : "Te pasaste"}
+          label={positive ? (esActual ? "Vas ahorrando" : "Ahorrado") : "Te pasaste"}
           value={formatARS(Math.abs(saved))}
           tone={positive ? "positive" : "negative"}
         />
