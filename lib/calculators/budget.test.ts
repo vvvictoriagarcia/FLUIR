@@ -4,6 +4,7 @@ import {
   monthBreakdown,
   savingsTrend,
   recalcFromLimits,
+  budgetAlerts,
   type BudgetCategory,
   type OnboardingAnswers,
 } from "./budget";
@@ -190,5 +191,60 @@ describe("savingsTrend", () => {
 
   it("no muestra nada si la diferencia redondea a 0", () => {
     expect(savingsTrend(0.312, 0.309)).toBeNull();
+  });
+});
+
+describe("budgetAlerts", () => {
+  const cats: BudgetCategory[] = [
+    { category: "Vivienda", allocated: 0, limit: 200_000, percent: 0, is_fixed: true },
+    { category: "Comida", allocated: 0, limit: 100_000, percent: 0, is_fixed: false },
+    { category: "Salidas", allocated: 0, limit: 50_000, percent: 0, is_fixed: false },
+    { category: "Ahorro", allocated: 0, limit: 150_000, percent: 0, is_fixed: false },
+  ];
+
+  it("marca 'over' cuando ya te pasaste del límite, sin importar el día", () => {
+    const a = budgetAlerts(cats, { Salidas: 60_000 }, 3, 30);
+    expect(a).toHaveLength(1);
+    expect(a[0]).toMatchObject({ category: "Salidas", level: "over", overBy: 10_000 });
+  });
+
+  it("marca 'pace' si al ritmo te vas a pasar aunque todavía no llegaste", () => {
+    // Día 10 de 30 (1/3 del mes) y ya gastaste 25k de 50k → proyecta 75k > 55k.
+    const a = budgetAlerts(cats, { Salidas: 25_000 }, 10, 30);
+    expect(a).toHaveLength(1);
+    expect(a[0].category).toBe("Salidas");
+    expect(a[0].level).toBe("pace");
+    expect(a[0].projected).toBe(75_000);
+  });
+
+  it("NO alerta por ritmo antes del día 5 (proyección ruidosa)", () => {
+    // Día 2: 20k de 50k proyectaría 300k, pero es demasiado temprano para avisar.
+    expect(budgetAlerts(cats, { Salidas: 20_000 }, 2, 30)).toHaveLength(0);
+  });
+
+  it("ignora fijos, Ahorro y categorías sin gasto", () => {
+    const a = budgetAlerts(
+      cats,
+      { Vivienda: 500_000, Ahorro: 500_000, Comida: 0 },
+      15,
+      30,
+    );
+    expect(a).toHaveLength(0);
+  });
+
+  it("ordena primero lo ya excedido y luego por cuánto se pasa", () => {
+    const a = budgetAlerts(
+      cats,
+      { Salidas: 60_000, Comida: 60_000 }, // Salidas over; Comida a ritmo se pasa
+      12,
+      30,
+    );
+    expect(a.map((x) => x.level)).toEqual(["over", "pace"]);
+    expect(a[0].category).toBe("Salidas");
+  });
+
+  it("no alerta si vas dentro del ritmo esperado", () => {
+    // Día 15 de 30 (mitad) y gastaste la mitad justa → proyecta el límite, sin margen de sobra.
+    expect(budgetAlerts(cats, { Salidas: 25_000 }, 15, 30)).toHaveLength(0);
   });
 });

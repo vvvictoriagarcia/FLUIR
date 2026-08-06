@@ -282,3 +282,85 @@ export function savingsTrend(
   if (deltaPts === 0) return null;
   return { deltaPts, mejor: deltaPts > 0 };
 }
+
+// ─────────────────────────────────────────────────────────────────
+// Alertas de desvío de presupuesto (categorías variables).
+// Proactivo y CONSCIENTE DEL RITMO: no basta con "gastaste el 80%", también
+// avisa "gastaste el 60% pero es día 8 → a este ritmo te vas de presupuesto".
+// Pura y determinística: recibe el día y los días del mes, no usa Date.
+// Voz Fluir: avisa, no reta; el copy se arma en el componente.
+// ─────────────────────────────────────────────────────────────────
+
+/** `over` = ya te pasaste del límite. `pace` = al ritmo actual te vas a pasar. */
+export type BudgetAlertLevel = "over" | "pace";
+
+export interface BudgetAlert {
+  category: string;
+  level: BudgetAlertLevel;
+  used: number;
+  limit: number;
+  /** Proyección de gasto a fin de mes al ritmo actual (lineal). */
+  projected: number;
+  /** Cuánto te pasás: real (over) o proyectado (pace). Ordena por severidad. */
+  overBy: number;
+}
+
+// Antes de este día del mes las proyecciones lineales son ruidosas (un gasto
+// temprano proyecta montos enormes), así que las alertas de RITMO no aplican.
+// Las de "ya te pasaste" sí, siempre: son un hecho, no una proyección.
+const PACE_MIN_DAY = 5;
+// Umbral de proyección: recién avisamos si al ritmo te pasás >10% del límite.
+const PACE_OVER_FACTOR = 1.1;
+
+export function budgetAlerts(
+  categories: BudgetCategory[],
+  spent: Record<string, number>,
+  day: number,
+  daysInMonth: number,
+): BudgetAlert[] {
+  const fraction =
+    daysInMonth > 0 ? Math.min(Math.max(day / daysInMonth, 0), 1) : 1;
+
+  const alerts: BudgetAlert[] = [];
+
+  for (const c of categories) {
+    // Solo variables: los fijos ya están comprometidos, y Ahorro no es un gasto.
+    if (c.is_fixed || c.category === "Ahorro" || c.limit <= 0) continue;
+
+    const used = spent[c.category] ?? 0;
+    if (used <= 0) continue;
+
+    const ratio = used / c.limit;
+    // Proyección lineal a fin de mes según lo que va del mes.
+    const projected = fraction > 0 ? used / fraction : used;
+
+    if (ratio >= 1) {
+      alerts.push({
+        category: c.category,
+        level: "over",
+        used,
+        limit: c.limit,
+        projected,
+        overBy: used - c.limit,
+      });
+    } else if (
+      day >= PACE_MIN_DAY &&
+      projected >= c.limit * PACE_OVER_FACTOR
+    ) {
+      alerts.push({
+        category: c.category,
+        level: "pace",
+        used,
+        limit: c.limit,
+        projected,
+        overBy: projected - c.limit,
+      });
+    }
+  }
+
+  // Primero las que ya se pasaron, luego por cuánto se pasan (o se pasarían).
+  return alerts.sort((a, b) => {
+    if (a.level !== b.level) return a.level === "over" ? -1 : 1;
+    return b.overBy - a.overBy;
+  });
+}

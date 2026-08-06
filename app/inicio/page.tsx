@@ -41,7 +41,8 @@ import {
   type Goal,
   type SavedBudget,
 } from "@/lib/budget-store";
-import { monthBreakdown, savingsTrend } from "@/lib/calculators/budget";
+import { budgetAlerts, monthBreakdown, savingsTrend } from "@/lib/calculators/budget";
+import { BudgetAlerts } from "@/components/budget-alerts";
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -144,6 +145,20 @@ export default function DashboardPage() {
   });
   const trend = savingsTrend(budget.result.savings_rate, prevSavedPct);
 
+  // Alertas de desvío: solo tienen sentido para el mes en curso (la proyección
+  // por ritmo usa el día de hoy). Para meses viejos no mostramos nada.
+  const now = new Date();
+  const currentYm = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+  const alerts =
+    budget.month === currentYm
+      ? budgetAlerts(
+          cats,
+          spent,
+          now.getDate(),
+          new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate(),
+        )
+      : [];
+
   // Anillo: cuánto del presupuesto variable ya gastaste, con color semáforo.
   const usedRatio = variableBudget > 0 ? variableSpent / variableBudget : 0;
   // Semáforo del presupuesto en 3 pasos, todo en paleta: verde (vas bien) →
@@ -227,6 +242,10 @@ export default function DashboardPage() {
             <ChevronRight className="ml-auto h-5 w-5 shrink-0 text-muted-foreground" />
           </Link>
         )}
+
+        {/* Alertas de desvío — proactivas y conscientes del ritmo. Solo salen
+            si hay algo para avisar; si vas bien, no aparecen. */}
+        <BudgetAlerts alerts={alerts} />
 
         {/* Anillo grande — solo en mobile (es el héroe de la pantalla chica) */}
         <div className="mb-6 flex justify-center lg:hidden">
