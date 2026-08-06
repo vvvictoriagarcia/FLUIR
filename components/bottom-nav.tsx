@@ -2,7 +2,16 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Receipt, Wallet, TrendingUp, User, Lock, HelpCircle } from "lucide-react";
+import {
+  Home,
+  Receipt,
+  Wallet,
+  TrendingUp,
+  User,
+  Lock,
+  HelpCircle,
+  GraduationCap,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/components/toast";
 
@@ -19,6 +28,7 @@ const ITEMS: Item[] = [
   { label: "Gastos", icon: Receipt, href: "/gastos" },
   { label: "Mi plata", icon: Wallet, href: "/patrimonio" },
   { label: "Invertir", icon: TrendingUp, href: "/invertir", gold: true },
+  { label: "Aprendé", icon: GraduationCap, href: "/educacion" },
   { label: "Perfil", icon: User, href: "/perfil" },
 ];
 
