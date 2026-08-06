@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import { useTrackFeature } from "@/lib/analytics";
 import Link from "next/link";
-import { motion } from "framer-motion";
 import {
   ArrowLeft,
   ArrowRight,
@@ -349,39 +348,107 @@ function Metric({
   );
 }
 
+/** Monto corto para las etiquetas del gráfico: $489k, $1,2M, $0. */
+function compactARS(n: number): string {
+  const abs = Math.abs(n);
+  const sign = n < 0 ? "−" : "";
+  if (abs >= 1_000_000) return `${sign}$${(abs / 1_000_000).toFixed(1).replace(".", ",").replace(",0", "")}M`;
+  if (abs >= 1_000) return `${sign}$${Math.round(abs / 1_000)}k`;
+  return `${sign}$${Math.round(abs)}`;
+}
+
 function AhorroMensual({ meses }: { meses: MonthSummary[] }) {
   // Del más viejo al más nuevo, últimos 6 meses.
   const datos = [...meses].reverse().slice(-6);
   const max = Math.max(...datos.map((m) => Math.max(m.saved, 0)), 1);
+  // Mes con más ahorro (para destacarlo) y total del período (para motivar).
+  const mejorIdx = datos.reduce(
+    (best, m, i) => (m.saved > datos[best].saved ? i : best),
+    0,
+  );
+  const total = datos.reduce((s, m) => s + Math.max(m.saved, 0), 0);
+  const positivos = datos.filter((m) => m.saved > 0).length;
+  // Altura del riel en px. Usamos px (no %) porque framer-motion no interpola
+  // bien hacia "100%" y la barra quedaba en 0 (ese era el gráfico vacío).
+  const TRACK_H = 124;
 
   return (
     <div className="mt-8">
-      <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-        Tu ahorro, mes a mes
-      </h2>
+      <div className="mb-3 flex items-end justify-between">
+        <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+          Tu ahorro, mes a mes
+        </h2>
+        {total > 0 && (
+          <span className="text-xs text-muted-foreground">
+            Juntaste{" "}
+            <span className="font-semibold text-positive tabular-nums">
+              {formatARS(total)}
+            </span>{" "}
+            💪
+          </span>
+        )}
+      </div>
+
       <div className="rounded-card border border-border bg-card p-5">
-        <div className="flex items-end justify-between gap-2" style={{ height: 140 }}>
+        <div className="flex items-end justify-between gap-2 sm:gap-4">
           {datos.map((m, i) => {
-            const h = Math.max((Math.max(m.saved, 0) / max) * 100, 2);
+            const positivo = m.saved >= 0;
+            const hPx = Math.max((Math.max(m.saved, 0) / max) * TRACK_H, positivo ? 6 : 0);
+            const esMejor = i === mejorIdx && m.saved > 0;
             return (
               <div key={m.month} className="flex flex-1 flex-col items-center gap-2">
-                <motion.div
-                  initial={{ height: 0 }}
-                  animate={{ height: `${h}%` }}
-                  transition={{ duration: 0.5, delay: i * 0.06 }}
+                {/* Valor arriba de la barra */}
+                <span
                   className={cn(
-                    "w-full max-w-[40px] rounded-t-md",
-                    m.saved >= 0 ? "bg-positive" : "bg-negative",
+                    "text-[10px] font-semibold tabular-nums sm:text-xs",
+                    esMejor ? "text-positive" : "text-muted-foreground",
                   )}
-                  title={formatARS(m.saved)}
-                />
-                <span className="text-[10px] text-muted-foreground">
+                >
+                  {esMejor && "⭐ "}
+                  {compactARS(m.saved)}
+                </span>
+
+                {/* Riel de altura fija: la barra usa altura en px (no %, ni
+                    animación de height por framer) para que SIEMPRE se vea, aun
+                    si la pestaña no está pintando frames. La vida la pone la
+                    animación CSS `grow-bar` (crece desde abajo; si no corre,
+                    igual queda a su altura final). */}
+                <div className="flex w-full items-end justify-center" style={{ height: TRACK_H }}>
+                  <div
+                    style={{ height: hPx }}
+                    className={cn(
+                      "grow-bar w-full max-w-[46px] origin-bottom rounded-t-lg transition-transform hover:scale-y-105",
+                      !positivo
+                        ? "bg-negative/80"
+                        : esMejor
+                          ? "bg-gradient-to-t from-positive to-positive/50 ring-2 ring-positive/30"
+                          : "bg-gradient-to-t from-positive/80 to-positive/40",
+                    )}
+                    title={formatARS(m.saved)}
+                  />
+                </div>
+
+                {/* Mes */}
+                <span
+                  className={cn(
+                    "text-[10px] capitalize sm:text-xs",
+                    esMejor ? "font-medium text-foreground" : "text-muted-foreground",
+                  )}
+                >
                   {m.label.split(" ")[0].slice(0, 3)}
                 </span>
               </div>
             );
           })}
         </div>
+
+        {positivos >= 2 && (
+          <p className="mt-4 border-t border-border pt-3 text-center text-xs text-muted-foreground">
+            {datos[datos.length - 1].saved >= datos[mejorIdx].saved
+              ? "¡Vas en tu mejor momento! Seguí así 🚀"
+              : `Tu récord fue en ${datos[mejorIdx].label.split(" ")[0]}. ¿Lo superás este mes?`}
+          </p>
+        )}
       </div>
     </div>
   );

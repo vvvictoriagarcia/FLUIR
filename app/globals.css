@@ -163,8 +163,24 @@ input:focus-visible,
     transform: translateX(100%);
   }
 }
+
+/* Barras del gráfico "tu ahorro, mes a mes": crecen desde abajo al entrar.
+   Fill-mode por defecto (none) → en reposo quedan a su altura final, así que
+   si la animación no corre (pestaña oculta), igual se ven. */
+@keyframes fluir-grow-bar {
+  from {
+    transform: scaleY(0);
+  }
+}
+.grow-bar {
+  animation: fluir-grow-bar 0.55s ease-out;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .skeleton::after {
+    animation: none;
+  }
+  .grow-bar {
     animation: none;
   }
 }

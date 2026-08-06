@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 import { BottomNav } from "@/components/bottom-nav";
 import { PlanGate } from "@/components/gates/plan-gate";
-import { guiaVista, marcarGuiaVista } from "@/lib/invest/state";
+import { loadGuiaVista, marcarGuiaVista } from "@/lib/invest/state";
 import { useSuggestionShown, trackSuggestionFollowed } from "@/lib/analytics";
 import { loadHoldings } from "@/lib/portfolio";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -70,7 +70,7 @@ function Journey() {
       // Gold la lleva derecho a su cartera. Se puede volver con "Ver la guía".
       const forzada = new URLSearchParams(window.location.search).has("guia");
       if (!forzada) {
-        const yaVio = guiaVista();
+        const yaVio = await loadGuiaVista();
         const tiene = yaVio ? [] : await loadHoldings().catch(() => []);
         if (yaVio || tiene.length > 0) {
           router.replace("/invertir/cartera");
