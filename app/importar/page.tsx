@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useTrackFeature } from "@/lib/analytics";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { ArrowLeft, FileText, Camera, ShieldCheck, Check } from "lucide-react";
+import { ArrowLeft, FileText, FileSpreadsheet, Camera, ShieldCheck, Check } from "lucide-react";
 import { BottomNav } from "@/components/bottom-nav";
 import { useToast } from "@/components/toast";
 import { useUser } from "@/hooks/useUser";
@@ -26,6 +26,7 @@ export default function ImportarPage() {
   const [imported, setImported] = useState(0);
   const csvInput = useRef<HTMLInputElement>(null);
   const imgInput = useRef<HTMLInputElement>(null);
+  const pdfInput = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     loadDashboard().then(({ budget }) => {
@@ -39,7 +40,7 @@ export default function ImportarPage() {
     });
   }, []);
 
-  async function parse(kind: "csv" | "image", data: string, mediaType?: string) {
+  async function parse(kind: "csv" | "image" | "pdf", data: string, mediaType?: string) {
     setPhase("parsing");
     try {
       const res = await fetch("/api/import/parse", {
@@ -84,6 +85,18 @@ export default function ImportarPage() {
       const dataUrl = String(reader.result ?? "");
       const base64 = dataUrl.split(",")[1] ?? "";
       parse("image", base64, file.type);
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function onPdf(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      const dataUrl = String(reader.result ?? "");
+      const base64 = dataUrl.split(",")[1] ?? "";
+      parse("pdf", base64, file.type);
     };
     reader.readAsDataURL(file);
   }
@@ -151,6 +164,16 @@ export default function ImportarPage() {
           <>
             <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2">
               <button
+                onClick={() => pdfInput.current?.click()}
+                className="flex flex-col items-start gap-2 rounded-card border border-border bg-card p-5 text-left transition-colors hover:bg-muted"
+              >
+                <FileText className="h-6 w-6 text-brand" />
+                <span className="font-medium">Resumen en PDF</span>
+                <span className="text-sm text-muted-foreground">
+                  El de la tarjeta o de Mercado Pago. Lo leemos entero.
+                </span>
+              </button>
+              <button
                 onClick={() => imgInput.current?.click()}
                 className="flex flex-col items-start gap-2 rounded-card border border-border bg-card p-5 text-left transition-colors hover:bg-muted"
               >
@@ -164,13 +187,14 @@ export default function ImportarPage() {
                 onClick={() => csvInput.current?.click()}
                 className="flex flex-col items-start gap-2 rounded-card border border-border bg-card p-5 text-left transition-colors hover:bg-muted"
               >
-                <FileText className="h-6 w-6 text-brand" />
+                <FileSpreadsheet className="h-6 w-6 text-brand" />
                 <span className="font-medium">Archivo CSV</span>
                 <span className="text-sm text-muted-foreground">
                   El export de movimientos de tu banco.
                 </span>
               </button>
             </div>
+            <input ref={pdfInput} type="file" accept="application/pdf,.pdf" hidden onChange={onPdf} />
             <input ref={imgInput} type="file" accept="image/*" hidden onChange={onImage} />
             <input ref={csvInput} type="file" accept=".csv,text/csv" hidden onChange={onCsv} />
 

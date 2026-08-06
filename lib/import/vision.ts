@@ -87,6 +87,47 @@ export async function extractFromImage(
 }
 
 /**
+ * Extrae movimientos de un PDF (base64) de un resumen de tarjeta o del
+ * comprobante/resumen de Mercado Pago. Claude lee el PDF nativo (bloque
+ * `document`), así no hace falta que el usuario le saque captura.
+ */
+export async function extractFromPdf(base64: string): Promise<RawMovement[]> {
+  const client = new Anthropic();
+  const res = await client.messages.create({
+    model: MODEL,
+    max_tokens: 8000,
+    output_config: { format: { type: "json_schema", schema: EXTRACT_SCHEMA } },
+    messages: [
+      {
+        role: "user",
+        content: [
+          {
+            type: "document",
+            source: {
+              type: "base64",
+              media_type: "application/pdf",
+              data: base64,
+            },
+          },
+          {
+            type: "text",
+            text: "Este PDF es un resumen de tarjeta de crédito o de Mercado Pago argentino. Extraé TODOS los consumos/gastos de todas las páginas. Devolvé solo gastos (excluí pagos, acreditaciones, impuestos de sellos si podés, y saldos). Para cada movimiento: fecha, comercio, monto y moneda (ARS por defecto, USD si es consumo en dólares).",
+          },
+        ],
+      },
+    ],
+  });
+  const block = res.content.find((b) => b.type === "text");
+  if (!block || block.type !== "text") return [];
+  try {
+    const parsed = JSON.parse(block.text) as { movimientos?: RawMovement[] };
+    return parsed.movimientos ?? [];
+  } catch {
+    return [];
+  }
+}
+
+/**
  * Categoriza comercios ambiguos contra las categorías del usuario.
  * Devuelve un mapa comercioNorm → categoría (solo las válidas).
  */

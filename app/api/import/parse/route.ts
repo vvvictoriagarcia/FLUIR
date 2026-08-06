@@ -5,6 +5,7 @@ import { buildMovements } from "@/lib/import/engine";
 import {
   anthropicConfigured,
   extractFromImage,
+  extractFromPdf,
   categorizeWithClaude,
 } from "@/lib/import/vision";
 import type { RawMovement } from "@/lib/import/types";
@@ -14,7 +15,7 @@ import type { RawMovement } from "@/lib/import/types";
 // Privacidad: el archivo se procesa en memoria y no se persiste.
 export async function POST(request: NextRequest) {
   let body: {
-    kind?: "csv" | "image";
+    kind?: "csv" | "image" | "pdf";
     data?: string;
     mediaType?: string;
     categories?: string[];
@@ -54,6 +55,21 @@ export async function POST(request: NextRequest) {
     const parsed = parseCSV(data);
     raws = parsed.raws;
     warnings.push(...parsed.warnings);
+  } else if (kind === "pdf") {
+    if (!anthropicConfigured()) {
+      return NextResponse.json(
+        { error: "Falta ANTHROPIC_API_KEY para leer PDF." },
+        { status: 503 }
+      );
+    }
+    try {
+      raws = await extractFromPdf(data);
+    } catch {
+      return NextResponse.json(
+        { error: "No pudimos leer el PDF. Fijate que sea el resumen y no una foto." },
+        { status: 502 }
+      );
+    }
   } else {
     if (!anthropicConfigured()) {
       return NextResponse.json(
