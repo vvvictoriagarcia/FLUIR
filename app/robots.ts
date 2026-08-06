@@ -10,7 +10,7 @@ export default function robots(): MetadataRoute.Robots {
       userAgent: "*",
       allow: "/",
       // Pantallas privadas o sin sentido en Google.
-      disallow: ["/api/", "/inicio", "/perfil", "/gastos", "/auth/"],
+      disallow: ["/api/", "/inicio", "/perfil", "/gastos", "/auth/", "/admin"],
     },
     sitemap: `${SITE_URL}/sitemap.xml`,
   };
