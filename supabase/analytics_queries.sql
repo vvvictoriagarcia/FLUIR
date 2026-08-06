@@ -154,3 +154,113 @@ select
 from vistas v
 left join seguidas s using (tipo)
 order by adherencia_pct desc nulls last;
+
+
+-- ─────────────────────────────────────────────────────────────────
+-- FASE 3 — Salud financiera (¿el producto le sirve a la gente?)
+-- Se derivan de las tablas que ya existen (budgets, budget_categories,
+-- expenses, goals). No dependen de eventos: son la foto de resultado.
+-- "Ahorro planeado" = income − suma de límites (sin la fila 'Ahorro'),
+-- exactamente lo que el dashboard le muestra al usuario.
+-- ─────────────────────────────────────────────────────────────────
+
+-- 10) Tasa de ahorro planeada, promedio por mes (tendencia macro) ────
+with planned as (
+  select
+    b.id, b.month, b.income,
+    b.income - coalesce(sum(bc.limit_amount) filter (where bc.category <> 'Ahorro'), 0) as ahorro_plan
+  from budgets b
+  left join budget_categories bc on bc.budget_id = b.id
+  group by b.id, b.month, b.income
+)
+select
+  month,
+  count(*)                                              as presupuestos,
+  round(avg(100.0 * ahorro_plan / income), 1)          as tasa_ahorro_prom_pct
+from planned
+where income > 0
+group by month
+order by month;
+
+
+-- 11) ¿La tasa de ahorro MEJORA con la antigüedad? (cohorte por vida) ─
+-- Ordena los presupuestos de cada usuario y compara la tasa de ahorro en
+-- su mes 1, mes 2, mes 3… Si sube, el hábito está funcionando.
+with planned as (
+  select
+    b.user_id, b.month, b.income,
+    b.income - coalesce(sum(bc.limit_amount) filter (where bc.category <> 'Ahorro'), 0) as ahorro_plan
+  from budgets b
+  left join budget_categories bc on bc.budget_id = b.id
+  where b.user_id is not null
+  group by b.user_id, b.month, b.income
+),
+seq as (
+  select *, row_number() over (partition by user_id order by month) as mes_de_vida
+  from planned
+  where income > 0
+)
+select
+  mes_de_vida,
+  count(*)                                     as usuarios,
+  round(avg(100.0 * ahorro_plan / income), 1)  as tasa_ahorro_prom_pct
+from seq
+group by mes_de_vida
+order by mes_de_vida;
+
+
+-- 12) % de meses SIN sobregiro (se mantienen dentro del presupuesto) ─
+-- Un mes "cierra" si lo gastado en variables no supera el presupuesto
+-- variable (los fijos ya están comprometidos, no se trackean como gasto).
+with cat as (  -- categorías variables de cada presupuesto
+  select b.id as budget_id, b.user_id, b.month, bc.category, bc.limit_amount
+  from budgets b
+  join budget_categories bc on bc.budget_id = b.id
+  where bc.category <> 'Ahorro' and bc.is_fixed = false
+),
+gasto as (  -- gastado por categoría
+  select budget_id, category, sum(amount) as gastado
+  from expenses
+  group by budget_id, category
+),
+por_mes as (
+  select
+    c.user_id, c.month,
+    sum(c.limit_amount)                        as presupuesto_variable,
+    coalesce(sum(g.gastado), 0)                as gastado_variable
+  from cat c
+  left join gasto g on g.budget_id = c.budget_id and g.category = c.category
+  group by c.user_id, c.month
+)
+select
+  count(*)                                                              as meses_medidos,
+  count(*) filter (where gastado_variable <= presupuesto_variable)      as meses_sin_sobregiro,
+  round(100.0 * count(*) filter (where gastado_variable <= presupuesto_variable)
+        / nullif(count(*), 0), 1)                                       as pct_sin_sobregiro
+from por_mes;
+
+
+-- 13) Objetivos — creados vs cumplidos ─────────────────────────────
+select
+  count(*)                                                    as objetivos_creados,
+  count(*) filter (where saved_amount >= target_amount)       as cumplidos,
+  round(100.0 * count(*) filter (where saved_amount >= target_amount)
+        / nullif(count(*), 0), 1)                             as pct_cumplidos,
+  count(*) filter (where saved_amount < target_amount
+                   and target_date < current_date)            as vencidos_sin_cumplir
+from goals;
+
+
+-- 14) Engagement con la carga de gastos (el hábito central) ─────────
+-- Días distintos con al menos un gasto, por usuario, últimos 30 días.
+-- Alimenta el North Star: usuarios con >= 3 días activos/semana.
+select
+  count(distinct user_id) filter (where dias_activos >= 12) as habito_fuerte,   -- ~3+/semana
+  count(distinct user_id) filter (where dias_activos between 4 and 11) as habito_medio,
+  count(distinct user_id) filter (where dias_activos between 1 and 3)  as habito_bajo
+from (
+  select user_id, count(distinct date_trunc('day', date)) as dias_activos
+  from expenses
+  where user_id is not null and date > now() - interval '30 days'
+  group by user_id
+) t;
