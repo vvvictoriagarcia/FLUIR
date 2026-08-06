@@ -24,7 +24,15 @@ export type EventName =
   | "paywall_converted"
   | "onboarding_completed"
   | "session_started" // una vez por visita (pestaña) → frecuencia/retención
-  | "feature_used"; // entró a una herramienta → adopción y uso
+  | "feature_used" // entró a una herramienta → adopción y uso
+  | "sugerencia_vista" // se le mostró una sugerencia → denominador de adherencia
+  | "sugerencia_seguida"; // tocó el CTA de la sugerencia → numerador de adherencia
+
+/** Sugerencias de producto que medimos (prop `tipo`). */
+export type SuggestionType =
+  | "objetivo" // dashboard: "ponete un objetivo"
+  | "pagos_fijos" // dashboard: "cargá tus pagos fijos"
+  | "invertir_sobrante"; // invertí: "te sobran $X por mes"
 
 /** Herramientas que medimos para adopción (prop `feature` de `feature_used`). */
 export type FeatureName =
@@ -145,4 +153,37 @@ export function useTrackFeature(feature: FeatureName): void {
   useEffect(() => {
     trackFeature(feature);
   }, [feature]);
+}
+
+// ── Fase 2: adherencia a sugerencias ────────────────────────────────
+//
+// Medimos "¿le hacen caso a las sugerencias?" con un par vista→seguida.
+// La ADHERENCIA de un tipo = sugerencia_seguida / sugerencia_vista.
+
+/** Impresión de una sugerencia. Una sola vez por tipo por visita (pestaña). */
+export function trackSuggestionShown(tipo: SuggestionType): void {
+  if (typeof window === "undefined") return;
+  const key = `fluir_sug_${tipo}`;
+  try {
+    if (sessionStorage.getItem(key)) return;
+    sessionStorage.setItem(key, "1");
+  } catch {
+    // Sin sessionStorage mandamos igual: mejor un duplicado que un ciego.
+  }
+  track("sugerencia_vista", { tipo });
+}
+
+/** La persona siguió la sugerencia (tocó su CTA). */
+export function trackSuggestionFollowed(tipo: SuggestionType): void {
+  track("sugerencia_seguida", { tipo });
+}
+
+/**
+ * Hook para registrar la impresión al montar, SOLO si la sugerencia se está
+ * mostrando (`when`). Ej: `useSuggestionShown("objetivo", !tieneObjetivo)`.
+ */
+export function useSuggestionShown(tipo: SuggestionType, when: boolean): void {
+  useEffect(() => {
+    if (when) trackSuggestionShown(tipo);
+  }, [tipo, when]);
 }

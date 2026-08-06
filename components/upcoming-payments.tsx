@@ -11,6 +11,7 @@ import {
   type UpcomingPayment,
 } from "@/lib/recurring";
 import { formatARS, cn } from "@/lib/utils";
+import { useSuggestionShown, trackSuggestionFollowed } from "@/lib/analytics";
 
 /**
  * "Lo que se viene": los próximos pagos fijos, arriba de todo en el dashboard.
@@ -37,6 +38,9 @@ export function UpcomingPayments() {
     };
   }, []);
 
+  // Sugerencia "cargá tus pagos fijos": impresión cuando no hay ninguno cargado.
+  useSuggestionShown("pagos_fijos", items !== null && items.length === 0);
+
   if (items === null) return null;
 
   const pendientes = items.filter((i) => i.status !== "pagado");
@@ -45,6 +49,7 @@ export function UpcomingPayments() {
     return (
       <Link
         href="/pagos"
+        onClick={() => trackSuggestionFollowed("pagos_fijos")}
         className="flex items-center gap-3 rounded-card border border-border bg-card p-4 transition-colors hover:bg-muted"
       >
         <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand/10 text-brand">

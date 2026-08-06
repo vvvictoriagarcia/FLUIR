@@ -15,6 +15,7 @@ import {
 import { BottomNav } from "@/components/bottom-nav";
 import { PlanGate } from "@/components/gates/plan-gate";
 import { guiaVista, marcarGuiaVista } from "@/lib/invest/state";
+import { useSuggestionShown, trackSuggestionFollowed } from "@/lib/analytics";
 import { loadHoldings } from "@/lib/portfolio";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Jerga } from "@/components/invest/jerga";
@@ -89,6 +90,12 @@ function Journey() {
   const ready = colchon === true && deudas === false;
   const TOTAL = 5;
 
+  // Sugerencia "te sobran $X, invertí": impresión en la pantalla del disparador.
+  useSuggestionShown(
+    "invertir_sobrante",
+    !decidiendo && step === 0 && (sobra ?? 0) > 0,
+  );
+
   if (decidiendo) {
     return <div className="h-64 animate-pulse rounded-card bg-muted" />;
   }
@@ -151,7 +158,12 @@ function Journey() {
 
         {step < TOTAL - 1 ? (
           <button
-            onClick={() => setStep((s) => s + 1)}
+            onClick={() => {
+              // Si venía del disparador "te sobran $X", tocar Empezar = seguir
+              // la sugerencia de arrancar a invertir.
+              if (step === 0) trackSuggestionFollowed("invertir_sobrante");
+              setStep((s) => s + 1);
+            }}
             disabled={step === 1 && (colchon === null || deudas === null)}
             className="flex items-center gap-1.5 rounded-lg bg-gold px-6 py-3 text-sm font-medium text-gold-foreground transition-opacity hover:opacity-90 disabled:opacity-40"
           >

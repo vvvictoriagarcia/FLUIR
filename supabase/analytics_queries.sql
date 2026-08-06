@@ -124,3 +124,33 @@ select
   count(*) filter (where name = 'paywall_converted') as tocaron_pagar
 from events
 where created_at > now() - interval '30 days';
+
+
+-- ─────────────────────────────────────────────────────────────────
+-- FASE 2 — Adherencia a sugerencias
+-- Eventos: sugerencia_vista {tipo} y sugerencia_seguida {tipo}.
+-- Tipos: objetivo, pagos_fijos, invertir_sobrante.
+-- ─────────────────────────────────────────────────────────────────
+
+-- 9) Adherencia por tipo de sugerencia (últimos 30 días) ────────────
+-- "¿Le hacen caso?" — de los que vieron cada sugerencia, cuántos la siguieron.
+with vistas as (
+  select props->>'tipo' as tipo, count(distinct session_id) as vieron
+  from events
+  where name = 'sugerencia_vista' and created_at > now() - interval '30 days'
+  group by tipo
+),
+seguidas as (
+  select props->>'tipo' as tipo, count(distinct session_id) as siguieron
+  from events
+  where name = 'sugerencia_seguida' and created_at > now() - interval '30 days'
+  group by tipo
+)
+select
+  v.tipo,
+  v.vieron,
+  coalesce(s.siguieron, 0)                                as siguieron,
+  round(100.0 * coalesce(s.siguieron, 0) / v.vieron, 1)   as adherencia_pct
+from vistas v
+left join seguidas s using (tipo)
+order by adherencia_pct desc nulls last;

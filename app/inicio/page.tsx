@@ -10,7 +10,12 @@ import { BottomNav } from "@/components/bottom-nav";
 import { UpcomingPayments } from "@/components/upcoming-payments";
 import { PortfolioCard } from "@/components/portfolio-card";
 import { touchLastSeen } from "@/lib/profile";
-import { track, trackOnce } from "@/lib/analytics";
+import {
+  track,
+  trackOnce,
+  useSuggestionShown,
+  trackSuggestionFollowed,
+} from "@/lib/analytics";
 import { BudgetDonut } from "@/components/budget-donut";
 import { ExpenseModal } from "@/components/expense-modal";
 import { AnimatedNumber } from "@/components/animated-number";
@@ -104,6 +109,10 @@ export default function DashboardPage() {
   }, [router]);
 
   const spent = useMemo(() => spentByCategory(expenses), [expenses]);
+
+  // Sugerencia "ponete un objetivo": se muestra cuando ya cargó el dashboard y
+  // no tiene ningún objetivo. Registramos la impresión para medir adherencia.
+  useSuggestionShown("objetivo", loaded && !!budget && !topGoal);
 
   if (!loaded || !budget) {
     return <DashboardSkeleton />;
@@ -279,6 +288,7 @@ export default function DashboardPage() {
             ) : (
               <Link
                 href="/objetivos"
+                onClick={() => trackSuggestionFollowed("objetivo")}
                 className="flex items-center gap-3 rounded-card border border-border bg-card p-4 transition-colors hover:bg-muted"
               >
                 <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand/10 text-brand">
